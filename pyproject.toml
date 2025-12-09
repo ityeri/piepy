@@ -36,6 +36,7 @@ six = "^1.17.0"
 aiomysql = "^0.3.2"
 cryptography = "^46.0.3"
 greenlet = "^3.3.0"
+pynacl = "^1.6.1"
 [project.urls]
 Homepage = "https://github.com/ityeri/pie_py"
 Issues = "https://github.com/ityeri/pie_py/issues"
