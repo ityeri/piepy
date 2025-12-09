@@ -726,7 +726,6 @@ description = "Lightweight in-process concurrent programming"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\""
 files = [
     {file = "greenlet-3.3.0-cp310-cp310-macosx_11_0_universal2.whl", hash = "sha256:6f8496d434d5cb2dce025773ba5597f71f5410ae499d5dd9533e0653258cdb3d"},
     {file = "greenlet-3.3.0-cp310-cp310-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b96dc7eef78fd404e022e165ec55327f935b9b52ff355b067eb4a0267fc1cffb"},
@@ -1663,4 +1662,4 @@ resolved_reference = "8380beb0af41f324e6805c3e3137ac1658dfefee"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "b06396897194395268ab2d68daa82b1172c39b1cace6a2cf9cc3f9e0275a1dca"
+content-hash = "43bb821bb549a431dd789cf5ba0afa51675b45f47e517edeab820f2652a95017"

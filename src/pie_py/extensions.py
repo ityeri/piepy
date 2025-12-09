@@ -4,7 +4,8 @@ preload_modules = [
 
 extensions = [
     "pie_py.music.music_extension",
-    'pie_py.censorship.censorship_extension'
+    'pie_py.censorship.censorship_extension',
+    'pie_py.ssudam.ssudam_extension'
 ]
 
 __all__ = [
