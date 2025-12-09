@@ -12,8 +12,17 @@ _Session: async_sessionmaker[AsyncSession]
 
 def db_setup():
     global _engine, _async_engine, _Session
-    _engine = create_engine(os.getenv('DB_URL'), echo=True)
-    _async_engine = create_async_engine(os.getenv('ASYNC_DB_URL'), echo=True)
+
+    db_path = (
+        f'{os.getenv("DB_USER")}:{os.getenv("DB_PASSWORD")}'
+        f'@{os.getenv("DB_HOST")}'
+        f':3306/{os.getenv("DB_NAME")}'
+    )
+    db_url = 'mysql+pymysql://' + db_path
+    async_db_url = 'mysql+aiomysql://' + db_path
+
+    _engine = create_engine(db_url, echo=True)
+    _async_engine = create_async_engine(async_db_url, echo=True)
     _Session = async_sessionmaker(bind=_async_engine, autoflush=False)
 
 def get_engine() -> Engine:
