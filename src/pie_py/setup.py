@@ -11,7 +11,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import ExtensionAlreadyLoaded
 
-from pie_py.db import db_setup, get_async_engine, Base, get_engine
+from pie_py.db import db_setup, Base, get_engine
 from .extensions import preload_modules, extensions
 
 # from pie_py.cli import CLIRunner
@@ -67,15 +67,23 @@ def setup():
         importlib.import_module(module)
         logging.info(f'"{module}" loaded')
 
+
     logging.info('Trying to connect to database for 60s')
+
     is_connected = False
     for i in range(60):
         try:
+            # conn = pymysql.connect(
+            #     host='db',
+            #     user='root',
+            #     password='root',
+            #     database='piepydb'
+            # )
             conn = pymysql.connect(
-                host='db',
-                user='root',
-                password='root',
-                database='piepydb'
+                host=os.getenv('DB_HOST'),
+                user=os.getenv('DB_USER'),
+                password=os.getenv('DB_PASSWORD'),
+                database=os.getenv('DATABASE')
             )
             is_connected = True
             break
