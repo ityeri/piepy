@@ -6,6 +6,7 @@ services:
     tty: true
 
     environment:
+      BOT_TOKEN: ${BOT_TOKEN}
 
     env_file:
       - .env
