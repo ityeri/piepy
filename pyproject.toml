@@ -1,6 +1,6 @@
 [project]
 name = "pie_py"
-version = "v0.1.0"
+version = "0.1.0"
 authors = [
   { name="ityeri", email="ityeri9@gmail.com" },
 ]
@@ -13,34 +13,29 @@ classifiers = [
 ]
 license = "MIT"
 license-files = ["LICENSE"]
+dependencies = [
+    "discord.py>=2.6.4,<3.0.0",
+    "yspy @ git+https://github.com/ityeri/yspy.git",
+    "dotenv>=0.9.9,<1.0.0",
+    "pymysql>=1.1.2,<2.0.0",
+    "pillow>=12.0.0,<13.0.0",
+    "sqlalchemy>=2.0.44,<3.0.0",
+    "prompt-toolkit>=3.0.52,<4.0.0",
+    "pytubefix>=10.3.6,<11.0.0",
+    "hgtk>=0.2.1,<1.0.0",
+    "fsspec>=2025.12.0,<2026.0.0",
+    "six>=1.17.0,<2.0.0",
+    "aiomysql>=0.3.2,<0.4.0",
+    "cryptography>=46.0.3,<47.0.0",
+    "greenlet>=3.3.0,<4.0.0",
+    "pynacl>=1.6.1,<2.0.0",
+    "davey>=0.1.6",
+]
 
-[tool.poetry]
-name = "pie_py"
-version = "0.0.1"
-description = "파이봇"
-authors = ["ityeri <ityeri9@gmail.com>"]
-packages = [{ include = "pie_py", from = "src" }]
-
-[tool.poetry.dependencies]
-discord-py = "^2.6.4"
-yspy = {git = "https://github.com/ityeri/yspy.git"}
-dotenv = "^0.9.9"
-pymysql = "^1.1.2"
-pillow = "^12.0.0"
-sqlalchemy = "^2.0.44"
-prompt-toolkit = "^3.0.52"
-pytubefix = "^10.3.6"
-hgtk = "^0.2.1"
-fsspec = "^2025.12.0"
-six = "^1.17.0"
-aiomysql = "^0.3.2"
-cryptography = "^46.0.3"
-greenlet = "^3.3.0"
-pynacl = "^1.6.1"
 [project.urls]
 Homepage = "https://github.com/ityeri/pie_py"
 Issues = "https://github.com/ityeri/pie_py/issues"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.11.8,<0.12"]
+build-backend = "uv_build"
