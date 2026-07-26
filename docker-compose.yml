@@ -6,10 +6,6 @@ services:
     tty: true
 
     environment:
-      DB_HOST: db
-      DB_USER: root
-      DB_PASSWORD: root
-      DB_NAME: piepydb
 
     env_file:
       - .env
