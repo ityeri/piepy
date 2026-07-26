@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-from pie_py.listener import ListenerManager
+from piepy.listener import ListenerManager
 from .guild_music_manager import GuildMusicManager, GuildManagerEvent
 
 

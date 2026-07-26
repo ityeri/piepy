@@ -11,4 +11,4 @@ COPY . ./
 RUN poetry build
 RUN pip install --no-cache-dir dist/*.whl
 
-CMD ["python", "-m", "pie_py"]
+CMD ["python", "-m", "piepy"]

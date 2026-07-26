@@ -2,7 +2,7 @@ import discord.ui
 from discord import Embed
 from discord.interactions import InteractionResponse
 
-from pie_py.utils import theme
+from piepy.utils import theme
 from ..core.guild_music_manager import GuildMusicManager
 
 

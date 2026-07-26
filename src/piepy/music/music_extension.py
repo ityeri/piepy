@@ -6,8 +6,8 @@ from discord.ext import commands
 from pytubefix import YouTube
 from pytubefix.exceptions import RegexMatchError, VideoUnavailable
 
-from pie_py.utils import theme
-from pie_py.utils.template import send_error_embed
+from piepy.utils import theme
+from piepy.utils.template import send_error_embed
 from .ui import PanelManager, LoopModeView
 from .core import GuildManagerPool, GuildMusicManager, GuildManagerEvent, StopReason, Music
 from .utils import get_guild_display_info, get_urls_by_query, parse_time

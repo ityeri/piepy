@@ -13,7 +13,7 @@ from discord.ext.commands import ExtensionAlreadyLoaded
 
 from .extensions import preload_modules, extensions
 
-# from pie_py.cli import CLIRunner
+# from piepy.cli import CLIRunner
 
 intents = discord.Intents.all()
 intents.message_content = True
