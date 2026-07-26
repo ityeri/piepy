@@ -1,15 +1,4 @@
 services:
-  db:
-    image: docker.io/library/mysql:8.0
-    container_name: piepydb
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: piepydb
-
-    volumes:
-      - dbdata:/var/lib/mysql
-
   app:
     build: .
     image: piepyimage
@@ -17,10 +6,7 @@ services:
     tty: true
 
     environment:
-      DB_HOST: db
-      DB_USER: root
-      DB_PASSWORD: root
-      DB_NAME: piepydb
+      BOT_TOKEN: ${BOT_TOKEN}
 
     env_file:
       - .env

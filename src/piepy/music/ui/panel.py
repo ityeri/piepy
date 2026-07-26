@@ -5,7 +5,7 @@ from discord import ButtonStyle
 from discord import Interaction, InteractionResponse
 from discord.ext import commands
 
-from pie_py.utils import theme
+from piepy.utils import theme
 from ..core.guild_music_manager import GuildMusicManager, GuildManagerEvent
 from ..core.guild_music_manager import StopReason
 from .loop_mode_ui import LoopModeSelect
