@@ -19,6 +19,7 @@ dependencies = [
     "dotenv>=0.9.9,<1.0.0",
     "pytubefix>=10.3.6,<11.0.0",
     "davey>=0.1.6",
+    "dependency-injector>=4.49.1",
 ]
 
 [project.urls]
