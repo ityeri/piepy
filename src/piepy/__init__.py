@@ -1,4 +1,3 @@
-from piepy import setup
 from piepy import listener
 from piepy import async_listener
 from piepy import utils
@@ -17,7 +16,6 @@ def main():
 
 
 __all__ = [
-    'setup',
     'listener',
     'async_listener',
     'utils',
