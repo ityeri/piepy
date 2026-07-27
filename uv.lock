@@ -380,6 +380,7 @@ dependencies = [
     { name = "discord-py" },
     { name = "dotenv" },
     { name = "pytubefix" },
+    { name = "reger" },
     { name = "yspy" },
 ]
 
@@ -390,6 +391,7 @@ requires-dist = [
     { name = "discord-py", specifier = ">=2.6.4,<3.0.0" },
     { name = "dotenv", specifier = ">=0.9.9,<1.0.0" },
     { name = "pytubefix", specifier = ">=10.3.6,<11.0.0" },
+    { name = "reger", specifier = ">=0.1.3" },
     { name = "yspy", git = "https://github.com/ityeri/yspy.git" },
 ]
 
@@ -456,6 +458,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/37/7c/d2cd1e10bff31b4d9c036381b2dd87746270624967ac61206c3866d832b4/pytubefix-10.10.1.tar.gz", hash = "sha256:41e230d128be7f85cbe0102ce7fe87943acc282cae35dabec21d2d62dc2340fa", size = 1523123, upload-time = "2026-06-24T00:51:36.809Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/13/bc/90b3cb9c27d6f3c13c474d64bf1d9c865b5be22cde5fef096c53f11e6511/pytubefix-10.10.1-py3-none-any.whl", hash = "sha256:32ba81b2dfdcdc38af853de98cacbd0c52456e452f03d92ebea21dee19208de8", size = 1531310, upload-time = "2026-06-24T00:51:32.359Z" },
+]
+
+[[package]]
+name = "reger"
+version = "0.1.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f0/8b/d5d47c0b3a49c20672dcc8addd00013e18aebb62d997db9364828b074d73/reger-0.1.3.tar.gz", hash = "sha256:9909288b22b2148645531c889e9367ccb88058d20a5f59b452edf978258cd4df", size = 3727, upload-time = "2026-05-27T03:33:31.245Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ea/92/40b4deee461f79ebf9de8441bd1f6c90feb8bd97f80e82e8508109cff71d/reger-0.1.3-py3-none-any.whl", hash = "sha256:db04362e3fa0065fd638fc887afd0a729856684557ea92f141bc78fc792630d0", size = 5219, upload-time = "2026-05-27T03:33:30.206Z" },
 ]
 
 [[package]]
