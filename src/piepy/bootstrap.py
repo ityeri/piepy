@@ -45,10 +45,6 @@ class Bootstrapper:
         file_handler = logging.FileHandler(filename='latest.log', encoding='utf-8', mode='w')
         file_handler.setFormatter(reger.ColourFormatter())
 
-        stream_handler = logging.StreamHandler()
-        file_handler.setFormatter(reger.ColourFormatter())
-
         root_logger.addHandler(file_handler)
-        root_logger.addHandler(stream_handler)
 
-        reger.setup_logging(logger=root_logger)
+        reger.setup_logging()
