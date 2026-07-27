@@ -6,7 +6,7 @@ authors = [
 ]
 description = "파이봇"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.14"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -17,24 +17,18 @@ dependencies = [
     "discord.py>=2.6.4,<3.0.0",
     "yspy @ git+https://github.com/ityeri/yspy.git",
     "dotenv>=0.9.9,<1.0.0",
-    "pymysql>=1.1.2,<2.0.0",
-    "pillow>=12.0.0,<13.0.0",
-    "sqlalchemy>=2.0.44,<3.0.0",
-    "prompt-toolkit>=3.0.52,<4.0.0",
     "pytubefix>=10.3.6,<11.0.0",
-    "hgtk>=0.2.1,<1.0.0",
-    "fsspec>=2025.12.0,<2026.0.0",
-    "six>=1.17.0,<2.0.0",
-    "aiomysql>=0.3.2,<0.4.0",
-    "cryptography>=46.0.3,<47.0.0",
-    "greenlet>=3.3.0,<4.0.0",
-    "pynacl>=1.6.1,<2.0.0",
     "davey>=0.1.6",
+    "dependency-injector>=4.49.1",
+    "reger>=0.1.3",
 ]
 
 [project.urls]
 Homepage = "https://github.com/ityeri/piepy"
 Issues = "https://github.com/ityeri/piepy/issues"
+
+[project.scripts]
+piepy = "piepy:main"
 
 [build-system]
 requires = ["uv_build>=0.11.8,<0.12"]
