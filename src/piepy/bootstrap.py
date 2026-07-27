@@ -37,6 +37,10 @@ class Bootstrapper:
         self.logger.info(f'Logged in as {self.bot.user.name}')
         self.logger.info('Timings Reset')
 
+        self.logger.info('Command syncing... (This may take a moment!)')
+        await self.bot.tree.sync()
+        self.logger.info('Done')
+
     def setup_logging(self):
         root_logger = logging.getLogger()
         root_logger.setLevel(logging.INFO)
