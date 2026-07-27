@@ -14,9 +14,9 @@ class Bootstrapper:
         self.bot: commands.Bot = root_container.bot()
 
     def run(self):
-        asyncio.run(self.start())
+        asyncio.run(self.arun())
 
-    async def start(self):
+    async def arun(self):
         print('Bootstrapper: Setup logging...')
         self.setup_logging()
         self.logger.info('If you can see it, logging setup is complete')
