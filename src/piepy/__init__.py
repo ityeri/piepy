@@ -8,6 +8,14 @@ from piepy.root_container import RootContainer
 from piepy.bootstrap import Bootstrapper
 from piepy import config
 
+
+def main():
+    container = RootContainer()
+    bootstrapper = Bootstrapper(container)
+
+    bootstrapper.run()
+
+
 __all__ = [
     'setup',
     'listener',
@@ -17,5 +25,7 @@ __all__ = [
 
     'RootContainer',
     'Bootstrapper',
-    'config'
+    'config',
+
+    'main'
 ]
