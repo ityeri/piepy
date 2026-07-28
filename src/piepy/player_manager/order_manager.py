@@ -141,11 +141,16 @@ class OrderManager[T: Hashable]:
         if element == self.current_element:
             raise ValueError('Given element is same as current_element')
 
+        if self.used_elements is not None:
+            used_elements = self.used_elements - {element}
+        else:
+            used_elements = None
+
         return OrderManager(
             elements=[e for e in self.elements if e != element],
             current_element=self.current_element,
             next_element=self.next_element,
-            used_elements=self.used_elements - {element},
+            used_elements=used_elements,
 
             is_loop=self.is_loop,
             is_random_order=self.is_random_order
