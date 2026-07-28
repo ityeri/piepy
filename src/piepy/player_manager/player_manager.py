@@ -50,14 +50,19 @@ class PlayerManager:
     async def _on_player_stop(self, player_stop_event: PlayerStopEvent):
         self._players.pop(player_stop_event.player.guild_id)
 
-    async def play_or_add(self, guild_id: int, voice_channel: VoiceChannel, music_element: MusicElement) -> MusicAddingResult:
+    async def play_or_add(
+            self,
+            guild_id: int,
+            voice_channel: VoiceChannel,
+            music_element: MusicElement,
+    ) -> MusicAddingResult:
         is_created = False
 
         player = self.get_player(guild_id)
         if player is None:
             player = self._create_player(guild_id)
 
-            await player.ready(voice_channel, self.bot.loop, is_loop=True, is_random_order=False)
+            await player.ready(voice_channel, self.bot.loop, is_loop=False, is_random_order=False)
 
             is_created = True
 
