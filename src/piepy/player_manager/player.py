@@ -123,7 +123,7 @@ class Player:
         self._order_manager = self._order_manager.rm(music)
 
     def goto(self, music: MusicElement):
-        ...
+        self._order_manager = self._order_manager.set_next(music)
 
     def change_order_mode(self, is_loop: bool, is_random_order: bool):
         ...
