@@ -1,10 +1,11 @@
+from dataclasses import dataclass
 from enum import Enum, auto
 
 from discord import VoiceChannel
 from discord.ext import commands
 
 from .music_element import MusicElement
-from .player import Player, PlayerStopEvent
+from .player import Player, PlayerStopEvent, PlayerStatus
 
 
 class _OperationResult(Enum):
@@ -25,6 +26,32 @@ class MusicRemovingResult(_OperationResult):
     PLAYER_NOT_FOUND = (auto(), False)
     REMOVED = (auto(), True)
     SKIPPED_AND_REMOVED = (auto(), True)
+
+@dataclass(frozen=False)
+class PlayerState:
+    guild_id: int
+    status: PlayerStatus
+    musics: list[MusicElement]
+
+    current_music: MusicElement
+    next_music: MusicElement
+
+    is_loop: bool
+    is_random_order: bool
+
+    @staticmethod
+    def from_player(player: Player) -> PlayerState:
+        return PlayerState(
+            guild_id=player.guild_id,
+            status=player.status,
+            musics=player.musics,
+
+            current_music=player.current_music,
+            next_music=player.next_music,
+
+            is_loop=player.is_loop,
+            is_random_order=player.is_random_order
+        )
 
 
 class PlayerManager:
