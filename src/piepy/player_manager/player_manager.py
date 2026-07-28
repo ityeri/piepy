@@ -16,7 +16,7 @@ class _OperationResult(Enum):
     def __init__(self, value, is_success: bool):
         self.is_success = is_success
 
-class MusicAddResult(_OperationResult):
+class MusicAddingResult(_OperationResult):
     CREATED_AND_ADDED = (auto(), True)
     ADDED = (auto(), True)
     DUPLICATED = (auto(), False)
@@ -54,7 +54,7 @@ class PlayerManager:
     async def _on_player_stop(self, player_stop_event: PlayerStopEvent):
         self._players.pop(player_stop_event.player.guild_id)
 
-    async def play_or_add(self, guild_id: int, voice_channel: VoiceChannel, music_element: MusicElement) -> MusicAddResult:
+    async def play_or_add(self, guild_id: int, voice_channel: VoiceChannel, music_element: MusicElement) -> MusicAddingResult:
         is_created = False
 
         player = self._get_player(guild_id)
@@ -66,14 +66,14 @@ class PlayerManager:
             is_created = True
 
         if music_element in player.musics:
-            return MusicAddResult.DUPLICATED
+            return MusicAddingResult.DUPLICATED
 
         player.add_last(music_element)
 
         if is_created:
             player.start()
 
-        return MusicAddResult.CREATED_AND_ADDED if is_created else MusicAddResult.ADDED
+        return MusicAddingResult.CREATED_AND_ADDED if is_created else MusicAddingResult.ADDED
 
     async def stop(self, guild_id: int) -> StopResult:
         player = self._get_player(guild_id)
