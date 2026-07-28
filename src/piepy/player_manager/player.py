@@ -128,5 +128,8 @@ class Player:
     def goto(self, music: MusicElement):
         self._order_manager = self._order_manager.set_next(music)
 
+    def skip(self):
+        self.voice_client.stop()
+
     def change_order_mode(self, is_loop: bool, is_random_order: bool):
         self._order_manager.change_order_mode(is_loop, is_random_order)
