@@ -25,7 +25,7 @@ class PlayerStoppingResult(_OperationResult):
     PLAYER_NOT_FOUND = (auto(), False)
     STOPPED = (auto(), True)
 
-class MusicRemoveResult(_OperationResult):
+class MusicRemovingResult(_OperationResult):
     PLAYER_NOT_FOUND = (auto(), False)
     REMOVED = (auto(), True)
     SKIPPED_AND_REMOVED = (auto(), True)
@@ -84,10 +84,10 @@ class PlayerManager:
 
         return PlayerStoppingResult.STOPPED
 
-    def rm_music(self, guild_id: int, music_element: MusicElement) -> MusicRemoveResult:
+    def rm_music(self, guild_id: int, music_element: MusicElement) -> MusicRemovingResult:
         player = self._get_player(guild_id)
         if player is None:
-            return MusicRemoveResult.PLAYER_NOT_FOUND
+            return MusicRemovingResult.PLAYER_NOT_FOUND
 
         skipped = False
 
@@ -98,9 +98,9 @@ class PlayerManager:
         player.rm(music_element)
 
         if skipped:
-            return MusicRemoveResult.SKIPPED_AND_REMOVED
+            return MusicRemovingResult.SKIPPED_AND_REMOVED
         else:
-            return MusicRemoveResult.REMOVED
+            return MusicRemovingResult.REMOVED
 
     def skip_music(self, guild_id: int, music_element: MusicElement) -> bool:
         ... # TODO
