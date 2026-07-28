@@ -14,6 +14,7 @@ class PlayerStatus(Enum):
     BEFORE_READY = auto()
     READY = auto()
     ACTIVE = auto()
+    STOPPING = auto()
     DONE = auto()
 
 @dataclass(frozen=True)
@@ -72,6 +73,9 @@ class Player:
         )
 
     async def _single_play_step(self, e: Exception | None = None):
+        if self.status in [PlayerStatus.STOPPING, PlayerStatus.DONE]:
+            return
+
         if self.voice_client.source:
             self.voice_client.source.cleanup()
 
@@ -88,6 +92,8 @@ class Player:
     async def stop(self):
         if self.status != PlayerStatus.ACTIVE:
             raise RuntimeError('Cannot stop. Player status is not ACTIVE')
+
+        self.status = PlayerStatus.STOPPING
 
         self.voice_client.stop()
         await self.voice_client.disconnect()
