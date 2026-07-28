@@ -4,7 +4,7 @@ import logging
 import reger
 from discord.ext import commands
 
-from piepy import RootContainer
+from piepy.root_container import RootContainer
 
 
 class Bootstrapper:
@@ -22,6 +22,11 @@ class Bootstrapper:
         self.logger.info('If you can see it, logging setup is complete')
 
         self.bot.add_listener(self.on_ready)
+
+        self.logger.info('Loading music command cog...')
+        cog = self.root_container.music_command_cog()
+        await self.bot.add_cog(cog)
+        self.logger.info('Done')
 
         self.logger.info('Starting bot...')
         config = self.root_container.config()
