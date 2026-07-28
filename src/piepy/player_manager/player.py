@@ -24,7 +24,10 @@ class PlayerStopEvent:
     type LISTENER_TYPE = Callable[[PlayerStopEvent], Awaitable]
 
 
-# TODO move_to, ... stop logic
+class MusicInPlayingError(Exception): ...
+
+
+#
 class Player:
     """
     """
@@ -106,7 +109,12 @@ class Player:
         self._order_manager = self._order_manager.add_last(music)
 
     def rm(self, music: MusicElement):
-        ...
+        if music not in self._order_manager.elements:
+            raise ValueError('Cannot remove. Given music element does not exists')
+        if music == self._order_manager.current_element:
+            raise MusicInPlayingError('Cannot remove. Given music is currently playing')
+
+        self._order_manager = self._order_manager.rm(music)
 
     def goto(self, music: MusicElement):
         ...
