@@ -20,12 +20,7 @@ class MusicCommandCog(commands.Cog):
         self.bot: commands.Bot = bot
         self.player_manager: PlayerManager = player_manager
 
-    class PlayFlags(commands.FlagConverter):
-        url_or_query: str = \
-            commands.Flag(name='주소나_검색어', description='유튜브 영상의 주소나 검색어를 입력하세요')
-
-    @commands.hybrid_command(name='재생')
-    async def play(self, ctx: commands.Context, *, flags: PlayFlags):
+    async def check_user_voice_state(self, ctx: commands.Context) -> bool:
         player = self.player_manager.get_player(ctx.guild.id)
 
         if ctx.author.voice is None:
@@ -36,7 +31,7 @@ class MusicCommandCog(commands.Cog):
                     color=theme.ERROR_COLOR
                 )
             )
-            return
+            return False
         elif player is not None:
             player_voice_channel = player.voice_client.channel
 
@@ -48,7 +43,19 @@ class MusicCommandCog(commands.Cog):
                         color=theme.ERROR_COLOR
                     )
                 )
-                return
+                return False
+
+        return True
+
+    class PlayFlags(commands.FlagConverter):
+        url_or_query: str = \
+            commands.Flag(name='주소나_검색어', description='유튜브 영상의 주소나 검색어를 입력하세요')
+
+    @commands.hybrid_command(name='재생')
+    async def play(self, ctx: commands.Context, *, flags: PlayFlags):
+        is_valid_context = await self.check_user_voice_state(ctx)
+        if not is_valid_context:
+            return
 
         is_youtube_url = True
 
