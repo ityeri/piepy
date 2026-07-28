@@ -125,10 +125,13 @@ class Player:
 
         self._order_manager = self._order_manager.rm(music)
 
-    def goto(self, music: MusicElement):
-        self._order_manager = self._order_manager.set_next(music)
+    def jump_to(self, music: MusicElement | None):
+        if music is not None:
+            if music not in self._order_manager.elements:
+                raise ValueError('Cannot jump. Given music element does not exists')
 
-    def skip(self):
+            self._order_manager = self._order_manager.set_next(music)
+
         self.voice_client.stop()
 
     def change_order_mode(self, is_loop: bool, is_random_order: bool):
