@@ -7,9 +7,7 @@ from .music_element import MusicElement
 from .player import Player, PlayerStopEvent
 
 
-class MusicAddResult(Enum):
-    is_success: bool
-
+class _OperationResult(Enum):
     def __new__(cls, value, is_success: bool):
         obj = object.__new__(cls)
         obj._value_ = value
@@ -18,35 +16,16 @@ class MusicAddResult(Enum):
     def __init__(self, value, is_success: bool):
         self.is_success = is_success
 
+class MusicAddResult(_OperationResult):
     CREATED_AND_ADDED = (auto(), True)
     ADDED = (auto(), True)
     DUPLICATED = (auto(), False)
 
-class StopResult(Enum):
-    is_success: bool
-
-    def __new__(cls, value, is_success: bool):
-        obj = object.__new__(cls)
-        obj._value_ = value
-        return obj
-
-    def __init__(self, value, is_success: bool):
-        self.is_success = is_success
-
+class StopResult(_OperationResult):
     PLAYER_NOT_FOUND = (auto(), False)
     STOPPED = (auto(), True)
 
-class MusicRemoveResult(Enum):
-    is_success: bool
-
-    def __new__(cls, value, is_success: bool):
-        obj = object.__new__(cls)
-        obj._value_ = value
-        return obj
-
-    def __init__(self, value, is_success: bool):
-        self.is_success = is_success
-
+class MusicRemoveResult(_OperationResult):
     PLAYER_NOT_FOUND = (auto(), False)
     REMOVED = (auto(), True)
     SKIPPED_AND_REMOVED = (auto(), True)
