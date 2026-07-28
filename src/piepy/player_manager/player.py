@@ -89,6 +89,8 @@ class Player:
         self.voice_client.stop()
         await self.voice_client.disconnect()
 
+        self.status = PlayerStatus.DONE
+
         await self.on_stop(PlayerStopEvent(self))
 
     def add_last(self, music: MusicElement):
