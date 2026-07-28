@@ -79,6 +79,13 @@ class PlayerManager:
         await player.stop()
         return True
 
+    def get_musics(self, guild_id: int) -> list[MusicElement] | None:
+        player = self._get_player(guild_id)
+        if player is None:
+            return None
+
+        return list(player.musics)
+
     def rm_music(self, guild_id: int, music_element: MusicElement) -> MusicRemovingResult:
         player = self._get_player(guild_id)
         if player is None:
