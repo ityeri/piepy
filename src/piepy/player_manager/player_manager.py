@@ -77,6 +77,13 @@ class PlayerManager:
     async def _on_player_stop(self, player_stop_event: PlayerStopEvent):
         self._players.pop(player_stop_event.player.guild_id)
 
+    def get_player_state(self, guild_id: int) -> PlayerState | None:
+        player = self._get_player(guild_id)
+        if player is not None:
+            return PlayerState.from_player(player)
+        else:
+            return None
+
     async def play_or_add(
             self,
             guild_id: int,
