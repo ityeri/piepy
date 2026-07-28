@@ -8,30 +8,30 @@ from .player import Player, PlayerStopEvent
 
 
 class MusicAddResult(Enum):
-    is_completed: bool
+    is_success: bool
 
-    def __new__(cls, value, is_completed: bool):
+    def __new__(cls, value, is_success: bool):
         obj = object.__new__(cls)
         obj._value_ = value
         return obj
 
     def __init__(self, value, is_success: bool):
-        self.is_completed = is_success
+        self.is_success = is_success
 
     CREATED_AND_ADDED = (auto(), True)
     ADDED = (auto(), True)
     DUPLICATED = (auto(), False)
 
 class StopResult(Enum):
-    is_completed: bool
+    is_success: bool
 
-    def __new__(cls, value, is_completed: bool):
+    def __new__(cls, value, is_success: bool):
         obj = object.__new__(cls)
         obj._value_ = value
         return obj
 
     def __init__(self, value, is_success: bool):
-        self.is_completed = is_success
+        self.is_success = is_success
 
     PLAYER_NON_EXISTS = (auto(), False)
     COMPLETED = (auto(), True)
