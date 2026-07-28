@@ -122,3 +122,6 @@ class PlayerManager:
             return MusicRemoveResult.SKIPPED_AND_REMOVED
         else:
             return MusicRemoveResult.REMOVED
+
+    def skip_music(self, guild_id: int, music_element: MusicElement) -> bool:
+        ... # TODO

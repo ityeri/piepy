@@ -71,7 +71,7 @@ class OrderManager[T: Hashable]:
             available_elements = set(self.elements) - self.used_elements
 
             if available_elements:
-                used_elements = self.used_elements + {next_element}
+                used_elements = self.used_elements + {self.next_element}
             else:
                 if self.is_loop:
                     used_elements = set()
