@@ -105,7 +105,7 @@ class PlayerManager:
 
         return StopResult.STOPPED
 
-    def rm(self, guild_id: int, music_element: MusicElement) -> MusicRemoveResult:
+    def rm_music(self, guild_id: int, music_element: MusicElement) -> MusicRemoveResult:
         player = self._get_player(guild_id)
         if player is None:
             return MusicRemoveResult.PLAYER_NOT_FOUND
