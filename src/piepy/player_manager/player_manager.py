@@ -32,7 +32,7 @@ class PlayerManager:
         self.bot: commands.Bot = bot
         self._players: dict[int, Player] = dict() # guild id: Player
 
-    def get_player(self, guild_id: int) -> Player | None:
+    def _get_player(self, guild_id: int) -> Player | None:
         try:
             return self._players[guild_id]
         except KeyError:
@@ -58,7 +58,7 @@ class PlayerManager:
     ) -> MusicAddingResult:
         is_created = False
 
-        player = self.get_player(guild_id)
+        player = self._get_player(guild_id)
         if player is None:
             player = self._create_player(guild_id)
 
@@ -77,7 +77,7 @@ class PlayerManager:
         return MusicAddingResult.CREATED_AND_ADDED if is_created else MusicAddingResult.ADDED
 
     async def stop(self, guild_id: int) -> bool:
-        player = self.get_player(guild_id)
+        player = self._get_player(guild_id)
         if player is None:
             return False
 
@@ -85,14 +85,14 @@ class PlayerManager:
         return True
 
     def get_musics(self, guild_id: int) -> list[MusicElement] | None:
-        player = self.get_player(guild_id)
+        player = self._get_player(guild_id)
         if player is None:
             return None
 
         return list(player.musics)
 
     def rm_music(self, guild_id: int, music_element: MusicElement) -> MusicRemovingResult:
-        player = self.get_player(guild_id)
+        player = self._get_player(guild_id)
         if player is None:
             return MusicRemovingResult.PLAYER_NOT_FOUND
 
@@ -110,7 +110,7 @@ class PlayerManager:
             return MusicRemovingResult.REMOVED
 
     def jump_to_music(self, guild_id: int, music_element: MusicElement | None) -> bool:
-        player = self.get_player(guild_id)
+        player = self._get_player(guild_id)
         if player is None:
             return False
 
@@ -118,7 +118,7 @@ class PlayerManager:
         return True
 
     def change_order_mode(self, guild_id: int, is_loop: bool, is_random_order: bool) -> bool:
-        player = self.get_player(guild_id)
+        player = self._get_player(guild_id)
         if player is None:
             return False
 

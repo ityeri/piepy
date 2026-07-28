@@ -23,7 +23,7 @@ class MusicCommandCog(commands.Cog):
 
     async def check_user_voice_state(self, ctx: commands.Context, is_first: bool = False) -> bool:
         # TODO is more better making player status wrapping feature in player manager
-        player = self.player_manager.get_player(ctx.guild.id)
+        player = self.player_manager._get_player(ctx.guild.id)
 
         if ctx.author.voice is None:
             await ctx.reply(
@@ -195,7 +195,7 @@ class MusicCommandCog(commands.Cog):
         if not is_valid_context:
             return
 
-        musics = self.player_manager.get_player(ctx.guild.id).musics
+        musics = self.player_manager._get_player(ctx.guild.id).musics
         target_music = self.query_music_naturally(musics, flags.title_or_index)
 
         result = self.player_manager.rm_music(ctx.guild.id, music_element=target_music)
