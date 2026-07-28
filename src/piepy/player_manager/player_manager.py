@@ -33,8 +33,23 @@ class StopResult(Enum):
     def __init__(self, value, is_success: bool):
         self.is_success = is_success
 
-    PLAYER_NON_EXISTS = (auto(), False)
-    COMPLETED = (auto(), True)
+    PLAYER_NOT_FOUND = (auto(), False)
+    STOPPED = (auto(), True)
+
+class MusicRemoveResult(Enum):
+    is_success: bool
+
+    def __new__(cls, value, is_success: bool):
+        obj = object.__new__(cls)
+        obj._value_ = value
+        return obj
+
+    def __init__(self, value, is_success: bool):
+        self.is_success = is_success
+
+    PLAYER_NOT_FOUND = (auto(), False)
+    REMOVED = (auto(), True)
+    SKIPPED_AND_REMOVED = (auto(), True)
 
 
 class PlayerManager:
@@ -83,10 +98,27 @@ class PlayerManager:
 
     async def stop(self, guild_id: int) -> StopResult:
         player = self._get_player(guild_id)
-
         if player is None:
-            return StopResult.PLAYER_NON_EXISTS
+            return StopResult.PLAYER_NOT_FOUND
 
         await player.stop()
 
-        return StopResult.COMPLETED
+        return StopResult.STOPPED
+
+    def rm(self, guild_id: int, music_element: MusicElement) -> MusicRemoveResult:
+        player = self._get_player(guild_id)
+        if player is None:
+            return MusicRemoveResult.PLAYER_NOT_FOUND
+
+        skipped = False
+
+        if music_element == player.current_music:
+            player.skip()
+            skipped = True
+
+        player.rm(music_element)
+
+        if skipped:
+            return MusicRemoveResult.SKIPPED_AND_REMOVED
+        else:
+            return MusicRemoveResult.REMOVED
