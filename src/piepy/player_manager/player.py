@@ -53,7 +53,11 @@ class Player:
 
         self.running_loop = running_loop
         self.voice_client = await start_channel.connect()
-        self._order_manager = OrderManager.create(list(), None, is_loop, is_random_order)
+        self._order_manager = OrderManager.create(
+            list(),
+            None, None,
+            is_loop=is_loop, is_random_order=is_random_order
+        )
 
         self.status = PlayerStatus.READY
 
@@ -64,6 +68,8 @@ class Player:
     def start(self):
         if self.status != PlayerStatus.READY:
             raise RuntimeError('Cannot start. Player status is not READY')
+
+        self._order_manager = self._order_manager.step()
 
         self.running_loop.create_task(self._single_play_step())
 
