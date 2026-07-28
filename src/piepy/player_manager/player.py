@@ -62,6 +62,9 @@ class Player:
         )
 
     async def _single_play_step(self, e: Exception | None = None):
+        if self.voice_client.source:
+            self.voice_client.source.cleanup()
+
         self._order_manager = self._order_manager.step()
         current_music = self._order_manager.current_element
 
@@ -69,10 +72,7 @@ class Player:
             await self.voice_client.channel.send("다틈 ㅃ")
             return # TODO Here needs some play end processing
 
-        if not current_music.is_ready:
-            await current_music.ready()
-
-        self._play_wrap(current_music.source)
+        self._play_wrap(await current_music.create_source())
 
     def add_last(self, music: MusicElement):
         self._order_manager = self._order_manager.add_last(music)
