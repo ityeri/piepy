@@ -115,7 +115,7 @@ class Player:
         await self.on_stop(PlayerStopEvent(self))
 
     def add_last(self, music: MusicElement):
-        self._order_manager = self._order_manager.add_last(music)
+        self._order_manager = self._order_manager.add_last(music).update_next_element()
 
     def rm(self, music: MusicElement):
         if music not in self._order_manager.elements:
