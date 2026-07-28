@@ -1,3 +1,4 @@
+import subprocess
 from abc import ABC, abstractmethod
 from typing import override, final
 
@@ -59,7 +60,8 @@ class UrlStreamMusicElement(MusicElement): # 지금 무료체험하세요
         self.source = FFmpegPCMAudio(
             self.stream_url,
             before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', # Reconnect setting
-            options='-af loudnorm=I=-16:TP=-1.5:LRA=11' # Loudness normalization
+            options='-af loudnorm=I=-16:TP=-1.5:LRA=11', # Loudness normalization
+            stderr=subprocess.DEVNULL
         )
 
     @override
