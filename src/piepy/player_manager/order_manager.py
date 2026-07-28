@@ -158,10 +158,15 @@ class OrderManager[T: Hashable]:
         else:
             used_elements = None
 
+        if self.next_element == element:
+            next_element = self._get_next_element_of(self.current_element)
+        else:
+            next_element = self.next_element
+
         return OrderManager(
             elements=[e for e in self.elements if e != element],
             current_element=self.current_element,
-            next_element=self.next_element,
+            next_element=next_element,
             used_elements=used_elements,
 
             is_loop=self.is_loop,
