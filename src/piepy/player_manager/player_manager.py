@@ -21,7 +21,7 @@ class MusicAddingResult(_OperationResult):
     ADDED = (auto(), True)
     DUPLICATED = (auto(), False)
 
-class StopResult(_OperationResult):
+class PlayerStoppingResult(_OperationResult):
     PLAYER_NOT_FOUND = (auto(), False)
     STOPPED = (auto(), True)
 
@@ -75,14 +75,14 @@ class PlayerManager:
 
         return MusicAddingResult.CREATED_AND_ADDED if is_created else MusicAddingResult.ADDED
 
-    async def stop(self, guild_id: int) -> StopResult:
+    async def stop(self, guild_id: int) -> PlayerStoppingResult:
         player = self._get_player(guild_id)
         if player is None:
-            return StopResult.PLAYER_NOT_FOUND
+            return PlayerStoppingResult.PLAYER_NOT_FOUND
 
         await player.stop()
 
-        return StopResult.STOPPED
+        return PlayerStoppingResult.STOPPED
 
     def rm_music(self, guild_id: int, music_element: MusicElement) -> MusicRemoveResult:
         player = self._get_player(guild_id)
