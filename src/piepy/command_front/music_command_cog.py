@@ -20,7 +20,7 @@ class MusicCommandCog(commands.Cog):
         self.bot: commands.Bot = bot
         self.player_manager: PlayerManager = player_manager
 
-    async def check_user_voice_state(self, ctx: commands.Context) -> bool:
+    async def check_user_voice_state(self, ctx: commands.Context, is_first: bool = False) -> bool:
         player = self.player_manager.get_player(ctx.guild.id)
 
         if ctx.author.voice is None:
@@ -44,6 +44,13 @@ class MusicCommandCog(commands.Cog):
                     )
                 )
                 return False
+        elif player is None and is_first:
+            await ctx.reply(
+                embed=Embed(
+                    title='BOT_DISCONNECTED',
+                    description='뮤직봇 기능을 사용중이지 않습니다! /재생 명령어를 써보세요'
+                )
+            )
 
         return True
 
@@ -51,9 +58,9 @@ class MusicCommandCog(commands.Cog):
         url_or_query: str = \
             commands.Flag(name='주소나_검색어', description='유튜브 영상의 주소나 검색어를 입력하세요')
 
-    @commands.hybrid_command(name='재생')
+    @commands.hybrid_command(name='재생', description='영상을 재생하거나 재생목록에 영상을 추가합니다')
     async def play(self, ctx: commands.Context, *, flags: PlayFlags):
-        is_valid_context = await self.check_user_voice_state(ctx)
+        is_valid_context = await self.check_user_voice_state(ctx, is_first=True)
         if not is_valid_context:
             return
 
@@ -137,6 +144,18 @@ class MusicCommandCog(commands.Cog):
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
 
-    @commands.hybrid_command(name='stop')
+    @commands.hybrid_command(name='나가', description='재생을 멈추고 통화방을 나갑니다')
     async def stop(self, ctx: commands.Context):
-        await ctx.reply(content=f'{await self.player_manager.stop(ctx.guild.id)}')
+        is_valid_context = await self.check_user_voice_state(ctx)
+        if not is_valid_context:
+            return
+
+        await self.player_manager.stop(ctx.guild.id)
+
+        await ctx.reply(
+            embed=Embed(
+                title='BYE_BYE',
+                description='재생을 멈추고 통화방을 나갑니다',
+                color=theme.OK_COLOR
+            )
+        )
