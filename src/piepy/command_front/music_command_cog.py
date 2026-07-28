@@ -44,15 +44,18 @@ class MusicCommandCog(commands.Cog):
                     )
                 )
                 return False
-        elif player is None and is_first:
+        elif player is None and not is_first:
             await ctx.reply(
                 embed=Embed(
                     title='BOT_DISCONNECTED',
-                    description='뮤직봇 기능을 사용중이지 않습니다! /재생 명령어를 써보세요'
+                    description='뮤직봇 기능을 사용중이지 않습니다! /재생 명령어를 써보세요',
+                    color=theme.ERROR_COLOR
                 )
             )
+            return False
 
         return True
+
 
     class PlayFlags(commands.FlagConverter):
         url_or_query: str = \
@@ -86,7 +89,8 @@ class MusicCommandCog(commands.Cog):
                 await ctx.reply(
                     embed=Embed(
                         title='RESULT_NOT_FOUND',
-                        description=f'주어진 검색어 "{query}" 에 대한 유튜브 검색 결과가 없습니다!'
+                        description=f'주어진 검색어 "{query}" 에 대한 유튜브 검색 결과가 없습니다!',
+                        color=theme.ERROR_COLOR
                     ).set_footer(
                         text='혹시 URL 을 넣었는데 이게 표시됐나요? 비공개 동영상이나 기타 이유로 볼 수 없는 동영상일 수도 있습니다'
                     )
@@ -118,8 +122,8 @@ class MusicCommandCog(commands.Cog):
                 embed=Embed(
                     title='CONNECTED_AND_PLAYED',
                     description=f'**{music.title}** 영상을 연결 및 재생합니다!',
-                    url=music.url,
                     color=theme.OK_COLOR,
+                    url=music.url
                 ).set_thumbnail(url=music.title_image_url)
                 .set_footer(text=f'검색어: {query}' if query is not None else None)
             )
@@ -129,9 +133,9 @@ class MusicCommandCog(commands.Cog):
                 embed=Embed(
                     title='ADDED_TO_PLAYLIST',
                     description=f'**{music.title}** 영상을 재생목록에 추가했습니다',
-                    url=music.url,
-                    color=theme.OK_COLOR
-                ).set_thumbnail(url=music.title_image_url)
+                    color=theme.OK_COLOR,
+                    url = music.url
+            ).set_thumbnail(url=music.title_image_url)
                 .set_footer(text=f'검색어: {query}' if query is not None else None)
             )
 
