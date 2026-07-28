@@ -114,3 +114,11 @@ class PlayerManager:
         player.jump_to(music_element)
 
         return MusicJumpingResult.JUMPED
+
+    def change_order_mode(self, guild_id: int, is_loop: bool, is_random_order: bool) -> bool:
+        player = self._get_player(guild_id)
+        if player is None:
+            return False
+
+        player.change_order_mode(is_loop, is_random_order)
+        return True
