@@ -99,7 +99,7 @@ class PlayerManager:
         skipped = False
 
         if music_element == player.current_music:
-            player.skip()
+            player.jump_to(None)
             skipped = True
 
         player.rm(music_element)
