@@ -13,7 +13,7 @@ class MusicCommandCog(commands.Cog):
         url_or_query: str = \
             commands.Flag(name='주소나_검색어', description='유튜브 영상의 주소나 검색어를 입력하세요')
 
-    @commands.hybrid_command(name="play")
+    @commands.hybrid_command(name='play')
     async def play(self, ctx: commands.Context, *, flags: PlayFlags):
         yt = YouTube(flags.url_or_query)
 
@@ -34,3 +34,7 @@ class MusicCommandCog(commands.Cog):
         )
 
         await ctx.reply(content=music_add_result.name)
+
+    @commands.hybrid_command(name='stop')
+    async def stop(self, ctx: commands.Context):
+        await self.player_manager.stop(ctx.guild.id)
