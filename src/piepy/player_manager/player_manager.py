@@ -28,6 +28,10 @@ class StopResult(Enum):
     def __new__(cls, value, is_completed: bool):
         obj = object.__new__(cls)
         obj._value_ = value
+        return obj
+
+    def __init__(self, value, is_success: bool):
+        self.is_completed = is_success
 
     PLAYER_NON_EXISTS = (auto(), False)
     COMPLETED = (auto(), True)
