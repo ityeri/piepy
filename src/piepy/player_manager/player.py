@@ -1,5 +1,8 @@
 from asyncio import AbstractEventLoop
+from collections.abc import Awaitable
+from dataclasses import dataclass
 from enum import Enum, auto
+from typing import Callable
 
 from discord import VoiceChannel, VoiceClient, AudioSource
 
@@ -13,14 +16,21 @@ class PlayerStatus(Enum):
     ACTIVE = auto()
     DONE = auto()
 
+@dataclass(frozen=True)
+class PlayerStopEvent:
+    player: Player
+
+    type LISTENER_TYPE = Callable[[PlayerStopEvent], Awaitable]
+
 
 # TODO move_to, ... stop logic
 class Player:
     """
     """
-    def __init__(self, guild_id: int):
+    def __init__(self, guild_id: int, on_stop: PlayerStopEvent.LISTENER_TYPE):
         self.guild_id: int = guild_id
         self.status: PlayerStatus = PlayerStatus.BEFORE_READY
+        self.on_stop: PlayerStopEvent.LISTENER_TYPE = on_stop
 
         self.voice_client: VoiceClient | None = None
         self.running_loop: AbstractEventLoop | None = None
@@ -73,6 +83,3 @@ class Player:
             return # TODO Here needs some play end processing
 
         self._play_wrap(await current_music.create_source())
-
-    def add_last(self, music: MusicElement):
-        self._order_manager = self._order_manager.add_last(music)
