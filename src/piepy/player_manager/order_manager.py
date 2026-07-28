@@ -110,6 +110,17 @@ class OrderManager[T: Hashable]:
             is_random_order=is_random_order
         )
 
+    def update_next_element(self) -> OrderManager[T]:
+        return OrderManager(
+            elements=self.elements,
+            current_element=self.current_element,
+            next_element=self._get_next_element_of(self.current_element),
+            used_elements=self.used_elements,
+
+            is_loop=self.is_loop,
+            is_random_order=self.is_random_order
+        )
+
     def goto(self, element: T) -> OrderManager[T]:
         if element not in self.elements:
             raise ValueError('Given element does not included in elements')
