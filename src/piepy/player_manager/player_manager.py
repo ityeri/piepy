@@ -21,18 +21,10 @@ class MusicAddingResult(_OperationResult):
     ADDED = (auto(), True)
     DUPLICATED = (auto(), False)
 
-class PlayerStoppingResult(_OperationResult):
-    PLAYER_NOT_FOUND = (auto(), False)
-    STOPPED = (auto(), True)
-
 class MusicRemovingResult(_OperationResult):
     PLAYER_NOT_FOUND = (auto(), False)
     REMOVED = (auto(), True)
     SKIPPED_AND_REMOVED = (auto(), True)
-
-class MusicJumpingResult(_OperationResult):
-    PLAYER_NOT_FOUND = (auto(), False)
-    JUMPED = (auto(), True)
 
 
 class PlayerManager:
@@ -79,14 +71,13 @@ class PlayerManager:
 
         return MusicAddingResult.CREATED_AND_ADDED if is_created else MusicAddingResult.ADDED
 
-    async def stop(self, guild_id: int) -> PlayerStoppingResult:
+    async def stop(self, guild_id: int) -> bool:
         player = self._get_player(guild_id)
         if player is None:
-            return PlayerStoppingResult.PLAYER_NOT_FOUND
+            return False
 
         await player.stop()
-
-        return PlayerStoppingResult.STOPPED
+        return True
 
     def rm_music(self, guild_id: int, music_element: MusicElement) -> MusicRemovingResult:
         player = self._get_player(guild_id)
@@ -106,14 +97,13 @@ class PlayerManager:
         else:
             return MusicRemovingResult.REMOVED
 
-    def jump_to_music(self, guild_id: int, music_element: MusicElement | None) -> MusicJumpingResult:
+    def jump_to_music(self, guild_id: int, music_element: MusicElement | None) -> bool:
         player = self._get_player(guild_id)
         if player is None:
-            return MusicJumpingResult.PLAYER_NOT_FOUND
+            return False
 
         player.jump_to(music_element)
-
-        return MusicJumpingResult.JUMPED
+        return True
 
     def change_order_mode(self, guild_id: int, is_loop: bool, is_random_order: bool) -> bool:
         player = self._get_player(guild_id)
