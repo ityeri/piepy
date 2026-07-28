@@ -111,6 +111,19 @@ class OrderManager[T: Hashable]:
             is_loop=self.is_loop,
             is_random_order=self.is_random_order
         )
+    def set_next(self, element: T) -> OrderManager[T]:
+        if element not in self.elements:
+            raise ValueError('Given element does not included in elements')
+
+        return OrderManager(
+            elements=self.elements,
+            current_element=self.current_element,
+            next_element=element,
+            used_elements=self.used_elements,
+
+            is_loop=self.is_loop,
+            is_random_order=self.is_random_order
+        )
     def add_last(self, element: T) -> OrderManager[T]:
         return OrderManager(
             elements=self.elements + [element],
