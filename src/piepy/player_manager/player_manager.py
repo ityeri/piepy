@@ -30,9 +30,9 @@ class MusicRemovingResult(_OperationResult):
     REMOVED = (auto(), True)
     SKIPPED_AND_REMOVED = (auto(), True)
 
-class MusicSkippingResult(_OperationResult):
+class MusicJumpingResult(_OperationResult):
     PLAYER_NOT_FOUND = (auto(), False)
-    SKIPPED = (auto(), True)
+    JUMPED = (auto(), True)
 
 
 class PlayerManager:
@@ -106,11 +106,11 @@ class PlayerManager:
         else:
             return MusicRemovingResult.REMOVED
 
-    def skip_music(self, guild_id: int) -> MusicSkippingResult:
+    def jump_to_music(self, guild_id: int, music_element: MusicElement | None) -> MusicJumpingResult:
         player = self._get_player(guild_id)
         if player is None:
-            return MusicSkippingResult.PLAYER_NOT_FOUND
+            return MusicJumpingResult.PLAYER_NOT_FOUND
 
-        player.skip()
+        player.jump_to(music_element)
 
-        return MusicSkippingResult.SKIPPED
+        return MusicJumpingResult.JUMPED
