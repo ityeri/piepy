@@ -86,6 +86,9 @@ class Player:
 
 
     async def stop(self):
+        if self.status != PlayerStatus.ACTIVE:
+            raise RuntimeError('Cannot stop. Player status is not ACTIVE')
+
         self.voice_client.stop()
         await self.voice_client.disconnect()
 
