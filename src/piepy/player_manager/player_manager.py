@@ -30,6 +30,10 @@ class MusicRemovingResult(_OperationResult):
     REMOVED = (auto(), True)
     SKIPPED_AND_REMOVED = (auto(), True)
 
+class MusicSkippingResult(_OperationResult):
+    PLAYER_NOT_FOUND = (auto(), False)
+    SKIPPED = (auto(), True)
+
 
 class PlayerManager:
     def __init__(self, bot: commands.Bot):
@@ -102,5 +106,11 @@ class PlayerManager:
         else:
             return MusicRemovingResult.REMOVED
 
-    def skip_music(self, guild_id: int, music_element: MusicElement) -> bool:
-        ... # TODO
+    def skip_music(self, guild_id: int) -> MusicSkippingResult:
+        player = self._get_player(guild_id)
+        if player is None:
+            return MusicSkippingResult.PLAYER_NOT_FOUND
+
+        player.skip()
+
+        return MusicSkippingResult.SKIPPED
