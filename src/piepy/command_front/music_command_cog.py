@@ -1,7 +1,18 @@
+from discord import Embed
 from discord.ext import commands
 from pytubefix import YouTube
+from pytubefix.exceptions import RegexMatchError, VideoUnavailable
+from yspy.__future__ import VideosSearch
 
-from piepy.player_manager import PlayerManager, UrlStreamMusicElement
+from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult
+from piepy.utils import theme
+
+
+async def get_urls_by_query(query: str, limit: int) -> list[str]:
+    search = VideosSearch(query, limit=limit)
+    result = await search.next()
+
+    return [single_result["link"] for single_result in result["result"]]
 
 
 class MusicCommandCog(commands.Cog):
@@ -13,28 +24,112 @@ class MusicCommandCog(commands.Cog):
         url_or_query: str = \
             commands.Flag(name='주소나_검색어', description='유튜브 영상의 주소나 검색어를 입력하세요')
 
-    @commands.hybrid_command(name='play')
+    @commands.hybrid_command(name='재생')
     async def play(self, ctx: commands.Context, *, flags: PlayFlags):
-        yt = YouTube(flags.url_or_query)
+        player = self.player_manager.get_player(ctx.guild.id)
+
+        if ctx.author.voice is None:
+            await ctx.reply(
+                embed=Embed(
+                    title='NOT_CONNECTED',
+                    description=f'이 명령어를 사용하기 위해선 먼저 이 서버의 아무 통화방에 접속해 주세요!',
+                    color=theme.ERROR_COLOR
+                )
+            )
+            return
+        elif player is not None:
+            player_voice_channel = player.voice_client.channel
+
+            if ctx.author.voice.channel != player_voice_channel:
+                await ctx.reply(
+                    embed=Embed(
+                        title='CHANNEL_MISMATCH',
+                        description=f'이 명령어를 사용하기 위해선 먼저 {player_voice_channel.mention} 통화방에 접속해 주세요!',
+                        color=theme.ERROR_COLOR
+                    )
+                )
+                return
+
+        is_youtube_url = True
+
+        try:
+            YouTube(flags.url_or_query)
+        except RegexMatchError:
+            is_youtube_url = False
+        except VideoUnavailable:
+            is_youtube_url = False
+
+        if is_youtube_url:
+            yt = YouTube(flags.url_or_query)
+            url = flags.url_or_query
+            query = None
+
+        else:
+            query = flags.url_or_query
+            results = await get_urls_by_query(query, limit=1)
+
+            if not results:
+                await ctx.reply(
+                    embed=Embed(
+                        title='RESULT_NOT_FOUND',
+                        description=f'주어진 검색어 "{query}" 에 대한 유튜브 검색 결과가 없습니다!'
+                    ).set_footer(
+                        text='혹시 URL 을 넣었는데 이게 표시됐나요? 비공개 동영상이나 기타 이유로 볼 수 없는 동영상일 수도 있습니다'
+                    )
+                )
+
+            yt = YouTube(results[0])
+            url = results[0]
 
         stream = max(yt.streams.filter(only_audio=True), key=lambda s: int(s.abr[:-4]) if s.abr else 0)
         audio_stream_url = stream.url
 
+        music = UrlStreamMusicElement(
+                f'yt_video_{yt.video_id}',
+                title=yt.title,
+                url=url,
+                title_image_url=yt.thumbnail_url,
+                length=yt.length,
+                stream_url=audio_stream_url
+            )
+
         music_add_result = await self.player_manager.play_or_add(
             ctx.guild.id,
             voice_channel=ctx.author.voice.channel,
-            music_element=UrlStreamMusicElement(
-                f'yt_video_{yt.video_id}',
-                title='언더테일 아시는구나! 혹시 모르시는분들에 대해[1] 설명해드립니다 샌즈랑[2] 언더테일의 세가지 엔딩루트중 몰살엔딩의 최종보스로 진.짜.겁.나.어.렵.습.니.다 공격은 전부다 회피하고 만피가 92인데 샌즈의 공격은 1초당 60이 다는데다가[3] 독뎀까지 추가로 붙어있습니다.. 하지만 이러면 절대로 게임을 깰 수 가없으니 제작진[4]이 치명적인 약점을 만들었죠. 샌즈의 치명적인 약점이 바로 지친다는것입니다. 패턴들을 다 견디고나면 지쳐서 자신의 턴을 유지한채로 잠에듭니다. 하지만 잠이들었을때 창을옮겨서 공격을 시도하고 샌즈는 1차공격은 피하지만 그 후에 바로날아오는 2차 공격을 맞고 죽습니다.',
-                url=flags.url_or_query,
-                title_image_url=yt.thumbnail_url,
-                length=1000000000000000000000.0,
-                stream_url=audio_stream_url
-            ),
+            music_element=music,
         )
 
-        await ctx.reply(content=music_add_result.name)
+        if music_add_result == MusicAddingResult.CREATED_AND_ADDED:
+            await ctx.reply(
+                embed=Embed(
+                    title='CONNECTED_AND_PLAYED',
+                    description=f'**{music.title}** 영상을 연결 및 재생합니다!',
+                    url=music.url,
+                    color=theme.OK_COLOR,
+                ).set_thumbnail(url=music.title_image_url)
+                .set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+
+        elif music_add_result == MusicAddingResult.ADDED:
+            await ctx.reply(
+                embed=Embed(
+                    title='ADDED_TO_PLAYLIST',
+                    description=f'**{music.title}** 영상을 재생목록에 추가했습니다',
+                    url=music.url,
+                    color=theme.OK_COLOR
+                ).set_thumbnail(url=music.title_image_url)
+                .set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+
+        elif music_add_result == MusicAddingResult.DUPLICATED:
+            await ctx.reply(
+                embed=Embed(
+                    title='DUPLICATED',
+                    description=f'**{music.title}** 영상은 중복됩니다!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
 
     @commands.hybrid_command(name='stop')
     async def stop(self, ctx: commands.Context):
-        await self.player_manager.stop(ctx.guild.id)
+        await ctx.reply(content=f'{await self.player_manager.stop(ctx.guild.id)}')
