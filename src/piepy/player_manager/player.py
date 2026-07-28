@@ -84,8 +84,12 @@ class Player:
 
         self._play_wrap(await current_music.create_source())
 
-    def stop(self):
-        ...
+
+    async def stop(self):
+        self.voice_client.stop()
+        await self.voice_client.disconnect()
+
+        await self.on_stop(PlayerStopEvent(self))
 
     def add_last(self, music: MusicElement):
         self._order_manager = self._order_manager.add_last(music)
