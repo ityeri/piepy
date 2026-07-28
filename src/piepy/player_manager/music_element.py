@@ -13,11 +13,6 @@ class MusicElement(ABC):
         self.title_image_url: str = title_image_url
         self.length: float = length
 
-        self.source: AudioSource | None = None
-
-        self.is_ready: bool = False
-        self.is_used: bool = False
-
     def __hash__(self):
         return hash(self.id)
     def __eq__(self, other):
@@ -26,27 +21,8 @@ class MusicElement(ABC):
         else:
             return False
 
-    @final
-    async def ready(self):
-        if self.is_used:
-            raise RuntimeError("Music cannot be reused")
-
-        await self._ready()
-        self.is_ready = True
-        self.is_used = True
-
-    @final
-    async def cleanup(self):
-        if not self.is_ready:
-            raise RuntimeError("Music is not ready")
-
-        await self._cleanup()
-        self.is_ready = False
-
     @abstractmethod
-    async def _ready(self) -> None: ...
-    @abstractmethod
-    async def _cleanup(self) -> None: ...
+    async def create_source(self) -> AudioSource: ...
 
 
 class UrlStreamMusicElement(MusicElement): # 지금 무료체험하세요
@@ -56,15 +32,10 @@ class UrlStreamMusicElement(MusicElement): # 지금 무료체험하세요
         self.stream_url: str = stream_url
 
     @override
-    async def _ready(self) -> None:
-        self.source = FFmpegPCMAudio(
+    async def create_source(self) -> AudioSource:
+        return FFmpegPCMAudio(
             self.stream_url,
-            before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', # Reconnect setting
+            before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', # Stream reconnect setting
             options='-af loudnorm=I=-16:TP=-1.5:LRA=11', # Loudness normalization
             stderr=open(os.devnull, 'wb')
         )
-
-    @override
-    async def _cleanup(self) -> None:
-        if self.source:
-            self.source.cleanup()
