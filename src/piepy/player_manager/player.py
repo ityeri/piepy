@@ -62,11 +62,16 @@ class Player:
         self.status = PlayerStatus.READY
 
     @property
-    def musics(self) -> list[MusicElement]:
-        return self._order_manager.elements
+    def musics(self) -> list[MusicElement]: return self._order_manager.elements
     @property
-    def current_music(self) -> MusicElement | None:
-        return self._order_manager.current_element
+    def current_music(self) -> MusicElement | None: return self._order_manager.current_element
+    @property
+    def next_music(self) -> MusicElement | None: return self._order_manager.next_element
+
+    @property
+    def is_loop(self) -> bool: return self._order_manager.is_loop
+    @property
+    def is_random_order(self) -> bool: return self._order_manager.is_random_order
 
     def start(self):
         if self.status != PlayerStatus.READY:
