@@ -4,7 +4,7 @@ from discord import VoiceChannel
 from discord.ext import commands
 
 from .music_element import MusicElement
-from .player import Player
+from .player import Player, PlayerStopEvent
 
 
 class MusicAddResult(Enum):
@@ -22,6 +22,16 @@ class MusicAddResult(Enum):
     ADDED = (auto(), True)
     DUPLICATED = (auto(), False)
 
+class StopResult(Enum):
+    is_completed: bool
+
+    def __new__(cls, value, is_completed: bool):
+        obj = object.__new__(cls)
+        obj._value_ = value
+
+    PLAYER_NON_EXISTS = (auto(), False)
+    COMPLETED = (auto(), True)
+
 
 class PlayerManager:
     def __init__(self, bot: commands.Bot):
@@ -38,10 +48,13 @@ class PlayerManager:
         if guild_id in self._players:
             raise RuntimeError(f'Player for given guild_id is already exists (id: {guild_id})')
 
-        created_player = Player(guild_id)
+        created_player = Player(guild_id, on_stop=self._on_player_stop)
         self._players[guild_id] = created_player
 
         return created_player
+
+    async def _on_player_stop(self, player_stop_event: PlayerStopEvent):
+        self._players.pop(player_stop_event.player.guild_id)
 
     async def play_or_add(self, guild_id: int, voice_channel: VoiceChannel, music_element: MusicElement) -> MusicAddResult:
         is_created = False
@@ -64,4 +77,12 @@ class PlayerManager:
 
         return MusicAddResult.CREATED_AND_ADDED if is_created else MusicAddResult.ADDED
 
-    # TODO stop logic
+    async def stop(self, guild_id: int) -> StopResult:
+        player = self._get_player(guild_id)
+
+        if player is None:
+            return StopResult.PLAYER_NON_EXISTS
+
+        await player.stop()
+
+        return StopResult.COMPLETED
