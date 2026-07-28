@@ -33,6 +33,7 @@ class UrlStreamMusicElement(MusicElement): # 지금 무료체험하세요
 
     @override
     async def create_source(self) -> AudioSource:
+        # TODO Long-period test needed. This may causes an unexpected stream disconnecting for given stream_url
         return FFmpegPCMAudio(
             self.stream_url,
             before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', # Stream reconnect setting
