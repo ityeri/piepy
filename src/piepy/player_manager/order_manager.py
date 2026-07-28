@@ -38,35 +38,47 @@ class OrderManager[T: Hashable]:
             is_random_order=is_random_order
         )
 
-    def step(self) -> OrderManager[T]:
+    def _get_next_element_of(self, current_element: T | None) -> T:
         if self.is_random_order:
             available_elements = set(self.elements) - self.used_elements
 
             if available_elements:
-                next_element = random.choice(list(available_elements))
-                used_elements = self.used_elements + {next_element}
+                return random.choice(list(available_elements))
             else:
                 if self.is_loop:
-                    next_element = random.choice(self.elements)
-                    used_elements = set()
+                    return random.choice(self.elements)
                 else:
-                    next_element = None
-                    used_elements = self.used_elements
+                    return None
 
         else:
-            if self.next_element is None:
+            if current_element is None:
                 next_index = 0
             else:
-                next_index = self.elements.index(self.next_element) + 1
+                next_index = self.elements.index(current_element) + 1
 
             if len(self.elements) <= next_index:
                 if self.is_loop:
-                    next_element = self.elements[0]
+                    return self.elements[0]
                 else:
-                    next_element = None
+                    return None
             else:
-                next_element = self.elements[next_index]
+                return self.elements[next_index]
 
+    def step(self) -> OrderManager[T]:
+        next_element = self._get_next_element_of(self.next_element)
+
+        if self.is_random_order:
+            available_elements = set(self.elements) - self.used_elements
+
+            if available_elements:
+                used_elements = self.used_elements + {next_element}
+            else:
+                if self.is_loop:
+                    used_elements = set()
+                else:
+                    used_elements = self.used_elements
+
+        else:
             used_elements = None
 
         return OrderManager(
