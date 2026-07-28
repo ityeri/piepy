@@ -72,10 +72,7 @@ class Player:
         if self.status != PlayerStatus.READY:
             raise RuntimeError('Cannot start. Player status is not READY')
 
-        self._order_manager = self._order_manager.step()
-
         self.running_loop.create_task(self._single_play_step())
-
         self.status = PlayerStatus.ACTIVE
 
     def _play_wrap(self, source: AudioSource):
