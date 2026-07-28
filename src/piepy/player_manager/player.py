@@ -83,3 +83,18 @@ class Player:
             return # TODO Here needs some play end processing
 
         self._play_wrap(await current_music.create_source())
+
+    def stop(self):
+        ...
+
+    def add_last(self, music: MusicElement):
+        self._order_manager = self._order_manager.add_last(music)
+
+    def rm(self, music: MusicElement):
+        ...
+
+    def goto(self, music: MusicElement):
+        ...
+
+    def change_order_mode(self, is_loop: bool, is_random_order: bool):
+        ...
