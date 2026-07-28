@@ -64,6 +64,9 @@ class Player:
     @property
     def musics(self) -> list[MusicElement]:
         return self._order_manager.elements
+    @property
+    def current_music(self) -> MusicElement | None:
+        return self._order_manager.current_element
 
     def start(self):
         if self.status != PlayerStatus.READY:
