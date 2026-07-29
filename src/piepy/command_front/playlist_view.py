@@ -52,27 +52,32 @@ class PlaylistView(LayoutView):
             Container(
                 TextDisplay(f'## {title}'),
                 *[
-                    Section(
-                        TextDisplay(
-                            f'### [__*{music.title}*__]({music.url})' if music == self.current_music
-                            else f'### [{music.title}]({music.url})'
-                        ),
-                        TextDisplay(
-                            f'길이: **{to_natural_timecode(music.length)}**  **·**  **현재 재생중!**'
-                            if music == self.current_music
-                            else f'길이: **{to_natural_timecode(music.length)}**'
-                        ),
-                        accessory=Button(label='바로 재생', custom_id=music.id),
-                    )
+                    self.create_music_section(music)
                     for music in self.musics
                 ],
                 accent_color=theme.OK_COLOR
             )
         )
 
-    @discord.ui.button
-    async def play_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        target_music: MusicElement = next(filter(lambda m: m.id == button.custom_id, self.musics))
+    def create_music_section(self, music: MusicElement) -> Section:
+        button = Button(label='바로 재생', custom_id=music.id)
+        button.callback = self.play_button
+
+        return Section(
+            TextDisplay(
+                f'### [__*{music.title}*__]({music.url})' if music == self.current_music
+                else f'### [{music.title}]({music.url})'
+            ),
+            TextDisplay(
+                f'길이: **{to_natural_timecode(music.length)}**  **·**  **현재 재생중!**'
+                if music == self.current_music
+                else f'길이: **{to_natural_timecode(music.length)}**'
+            ),
+            accessory=button,
+        )
+
+    async def play_button(self, interaction: discord.Interaction):
+        target_music: MusicElement = next(filter(lambda m: m.id == interaction.data['custom_id'], self.musics))
 
         is_success = self.player_manager.jump_to_music(self.guild_id, target_music)
         response: InteractionResponse = interaction.response
