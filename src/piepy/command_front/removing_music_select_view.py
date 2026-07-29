@@ -69,7 +69,7 @@ class RemovingMusicSelectView(LayoutView):
             await response.send_message(
                 embed=Embed(
                     title='REPLAYED',
-                    description=f'**{target_music.title}** 영상을 재생목록에서 뺐습니다!',
+                    description=f'**{target_music.title}** 영상을 재생목록에서 뺐습니다',
                     color=theme.OK_COLOR
                 )
             )
@@ -77,7 +77,7 @@ class RemovingMusicSelectView(LayoutView):
             await response.send_message(
                 embed=Embed(
                     title='SKIPPED_TO_TARGET',
-                    description=f'**{target_music.title}** 영상을 건너뛴 후, 재생목록에서 뺐습니다!',
+                    description=f'**{target_music.title}** 영상을 건너뛴 후, 재생목록에서 뺐습니다',
                     color=theme.OK_COLOR
                 )
             )
