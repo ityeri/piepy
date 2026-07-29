@@ -1,8 +1,9 @@
+from yspy.__future__ import VideosSearch
+
 from discord import Embed
 from discord.ext import commands
 from pytubefix import YouTube
 from pytubefix.exceptions import RegexMatchError, VideoUnavailable
-from yspy.__future__ import VideosSearch
 
 from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement, \
     MusicRemovingResult
@@ -13,7 +14,25 @@ async def get_urls_by_query(query: str, limit: int) -> list[str]:
     search = VideosSearch(query, limit=limit)
     result = await search.next()
 
-    return [single_result["link"] for single_result in result["result"]]
+    return [single_result['link'] for single_result in result['result']]
+
+def query_music_naturally(musics: list[MusicElement], title_or_index: str) -> MusicElement | None:
+    try:
+        index: int = int(title_or_index) - 1
+        if 0 <= index: # 맞다 파이썬 음수 인덱스도 있었지
+            try:
+                return musics[index]
+            except IndexError:
+                pass
+
+    except ValueError:
+        title: str = title_or_index
+
+        for checking_music in musics:
+            if title in checking_music.title:
+                return checking_music
+
+    return None
 
 
 class MusicCommandCog(commands.Cog):
@@ -165,38 +184,21 @@ class MusicCommandCog(commands.Cog):
             )
         )
 
-    class RmFlags(commands.FlagConverter):
+
+    class OptionalMusicSelectFlags(commands.FlagConverter):
         title_or_index: str | None = \
-            commands.Flag(name="번호나_제목", description="영상의 번호나 제목 또는 제목의 일부를 입력하세요")
+            commands.Flag(name='번호나_제목', description='영상의 번호나 제목 또는 제목의 일부를 입력하세요')
 
-    @staticmethod
-    def query_music_naturally(musics: list[MusicElement], title_or_index: str) -> MusicElement | None:
-        try:
-            index: int = int(title_or_index) - 1
-            if 0 <= index: # 맞다 파이썬 음수 인덱스도 있었지
-                try:
-                    return musics[index]
-                except IndexError:
-                    pass
-
-        except ValueError:
-            title: str = title_or_index
-
-            for checking_music in musics:
-                if title in checking_music.title:
-                    return checking_music
-
-        return None
-
-    @commands.hybrid_command(name="빼기", description="재생목록에서 영상을 하나 제거합니다")
-    async def rm(self, ctx: commands.Context, *, flags: RmFlags):
+    @commands.hybrid_command(name='빼기', description='재생목록에서 영상을 하나 제거합니다')
+    async def rm(self, ctx: commands.Context, *, flags: OptionalMusicSelectFlags):
         is_valid_context = await self.check_user_voice_state(ctx)
         if not is_valid_context:
             return
 
         # It's already guaranteed player state shouldn't be None value in the context validation logic above
+        # TODO when .title_or_index is null, displaying UI
         musics = self.player_manager.get_player_state(ctx.guild.id).musics
-        target_music = self.query_music_naturally(musics, flags.title_or_index)
+        target_music = query_music_naturally(musics, flags.title_or_index)
 
         result = self.player_manager.rm_music(ctx.guild.id, music_element=target_music)
 
@@ -213,6 +215,38 @@ class MusicCommandCog(commands.Cog):
                 embed=Embed(
                     title='SKIPPED_AND_REMOVED',
                     description=f'**{target_music.title}** 영상을 건너뛴 후, 재생목록에서 제거했습니다',
+                    color=theme.OK_COLOR
+                )
+            )
+
+
+    @commands.hybrid_command(name="다음", description="다음 영상을 바로 재생하거나 지정한 영상으로 건너뜁니다")
+    async def next(self, ctx: commands.Context, *, flags: OptionalMusicSelectFlags):
+        is_valid_context = await self.check_user_voice_state(ctx)
+        if not is_valid_context:
+            return
+
+        if flags.title_or_index is None:
+            self.player_manager.jump_to_music(ctx.guild.id, None)
+
+            await ctx.reply(
+                embed=Embed(
+                    title='SKIPPED_TO_NEXT',
+                    description='다음 영상으로 건너 뛰었습니다!',
+                    color=theme.OK_COLOR
+                )
+            )
+        else:
+            # It's already guaranteed player state shouldn't be None value in the context validation logic above
+            musics = self.player_manager.get_player_state(ctx.guild.id).musics
+            target_music = query_music_naturally(musics, flags.title_or_index)
+
+            self.player_manager.jump_to_music(ctx.guild.id, target_music)
+
+            await ctx.reply(
+                embed=Embed(
+                    title='SKIPPED_TO_TARGET',
+                    description=f'**{target_music.title}** 영상으로 건너 뛰었습니다!',
                     color=theme.OK_COLOR
                 )
             )
