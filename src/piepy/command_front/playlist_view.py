@@ -91,7 +91,9 @@ class PlaylistView(LayoutView):
                 )
             )
         else:
-            if target_music == self.current_music:
+            player_state = self.player_manager.get_player_state(self.guild_id)
+
+            if target_music == player_state.guild_id:
                 await response.send_message(
                     embed=Embed(
                         title='REPLAYED',
