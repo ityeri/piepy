@@ -1,3 +1,5 @@
+from turtledemo.forest import start
+
 import discord
 from discord import InteractionResponse, Embed
 from discord.ui import LayoutView, Container, Select, TextDisplay, ActionRow
@@ -46,24 +48,23 @@ class NextMusicSelectView(LayoutView):
 
     async def on_select(self, interaction: discord.Interaction):
         value = interaction.data['values'][0]
+        player_state = self.player_manager.get_player_state(self.guild_id)
+        response: InteractionResponse = interaction.response
 
         if value == 'next':
             target_music: MusicElement | None = None
         else:
             target_music: MusicElement | None = next(filter(lambda m: m.id == value[1:], self.musics))
 
-        player_state = self.player_manager.get_player_state(self.guild_id)
-        response: InteractionResponse = interaction.response
-
-        if target_music not in player_state.musics:
-            await response.send_message(
-                embed=Embed(
-                    title='MUSIC_NOT_FOUND',
-                    description=f'해당 영상은 현재 재생목록에 없습니다!',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text='/목록 명령어로 새 최신 재생목록을 띄워 보세요')
-            )
-            return
+            if target_music not in player_state.musics:
+                await response.send_message(
+                    embed=Embed(
+                        title='MUSIC_NOT_FOUND',
+                        description=f'해당 영상은 현재 재생목록에 없습니다!',
+                        color=theme.ERROR_COLOR
+                    ).set_footer(text='/목록 명령어로 새 최신 재생목록을 띄워 보세요')
+                )
+                return
 
         is_success = self.player_manager.jump_to_music(self.guild_id, target_music)
 
