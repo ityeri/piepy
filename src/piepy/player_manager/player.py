@@ -176,7 +176,9 @@ class Player:
         self.voice_client.stop()
 
     def change_order_mode(self, is_loop: bool, is_random_order: bool):
-        self._order_manager.change_order_mode(is_loop, is_random_order)
+        self._order_manager = self._order_manager\
+            .change_order_mode(is_loop, is_random_order)\
+            .update_next_element()
 
     def subscribe_next_step(self) -> asyncio.Future[None]:
         future: asyncio.Future[None] = self.running_loop.create_future()
