@@ -17,6 +17,21 @@ class PlayerStatus(Enum):
     STOPPING = auto()
     DONE = auto()
 
+@dataclass(frozen=False)
+class PlayerState:
+    guild_id: int
+    status: PlayerStatus
+    musics: list[MusicElement]
+
+    current_music: MusicElement | None
+    next_music: MusicElement | None
+
+    is_loop: bool
+    is_random_order: bool
+
+    current_channel: VoiceChannel | None
+
+
 @dataclass(frozen=True)
 class PlayerStopEvent:
     player: Player
@@ -150,3 +165,18 @@ class Player:
 
     def change_order_mode(self, is_loop: bool, is_random_order: bool):
         self._order_manager.change_order_mode(is_loop, is_random_order)
+
+    def to_player_state(self) -> PlayerState:
+        return PlayerState(
+            guild_id=self.guild_id,
+            status=self.status,
+            musics=list(self.musics),
+
+            current_music=self.current_music,
+            next_music=self.next_music,
+
+            is_loop=self.is_loop,
+            is_random_order=self.is_random_order,
+
+            current_channel=self.voice_client.channel
+        )

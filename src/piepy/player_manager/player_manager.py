@@ -5,7 +5,7 @@ from discord import VoiceChannel
 from discord.ext import commands
 
 from .music_element import MusicElement
-from .player import Player, PlayerStopEvent, PlayerStatus
+from .player import Player, PlayerStopEvent, PlayerState
 
 
 class _OperationResult(Enum):
@@ -26,36 +26,6 @@ class MusicRemovingResult(_OperationResult):
     PLAYER_NOT_FOUND = (auto(), False)
     REMOVED = (auto(), True)
     SKIPPED_AND_REMOVED = (auto(), True)
-
-@dataclass(frozen=False)
-class PlayerState:
-    guild_id: int
-    status: PlayerStatus
-    musics: list[MusicElement]
-
-    current_music: MusicElement | None
-    next_music: MusicElement | None
-
-    is_loop: bool
-    is_random_order: bool
-
-    current_channel: VoiceChannel | None
-
-    @staticmethod
-    def from_player(player: Player) -> PlayerState:
-        return PlayerState(
-            guild_id=player.guild_id,
-            status=player.status,
-            musics=player.musics,
-
-            current_music=player.current_music,
-            next_music=player.next_music,
-
-            is_loop=player.is_loop,
-            is_random_order=player.is_random_order,
-
-            current_channel=player.voice_client.channel
-        )
 
 
 class PlayerManager:
@@ -84,7 +54,7 @@ class PlayerManager:
     def get_player_state(self, guild_id: int) -> PlayerState | None:
         player = self._get_player(guild_id)
         if player is not None:
-            return PlayerState.from_player(player)
+            return player.to_player_state()
         else:
             return None
 
