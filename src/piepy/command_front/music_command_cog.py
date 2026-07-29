@@ -9,6 +9,7 @@ from pytubefix.exceptions import RegexMatchError, VideoUnavailable
 from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement, \
     MusicRemovingResult, PlayerState
 from piepy.utils import theme
+from .next_music_select_view import NextMusicSelectView
 from .playlist_view import PlaylistView
 
 
@@ -228,35 +229,22 @@ class MusicCommandCog(commands.Cog):
 
 
     @commands.hybrid_command(name="다음", description="다음 영상을 바로 재생하거나 지정한 영상으로 건너뜁니다")
-    async def next(self, ctx: commands.Context, *, flags: OptionalMusicSelectFlags):
+    async def next(self, ctx: commands.Context):
         is_valid_context = await self.check_user_voice_state(ctx)
         if not is_valid_context:
             return
 
-        if flags.title_or_index is None:
-            self.player_manager.jump_to_music(ctx.guild.id, None)
+        player_state = self.player_manager.get_player_state(ctx.guild.id)
+        musics = player_state.musics
 
-            await ctx.reply(
-                embed=Embed(
-                    title='SKIPPED_TO_NEXT',
-                    description='다음 영상으로 건너 뛰었습니다!',
-                    color=theme.OK_COLOR
-                )
+        await ctx.reply(
+            view=NextMusicSelectView(
+                '다음 영상으로 건너 뛰거나, 재생할 영상을 골라 주세요',
+                self.player_manager,
+                player_state.guild_id,
+                musics,
             )
-        else:
-            player_state = self.player_manager.get_player_state(ctx.guild.id)
-            musics = player_state.musics
-            target_music = query_music_naturally(musics, flags.title_or_index)
-
-            self.player_manager.jump_to_music(ctx.guild.id, target_music)
-
-            await ctx.reply(
-                embed=Embed(
-                    title='SKIPPED_TO_TARGET',
-                    description=f'**{target_music.title}** 영상으로 건너 뛰었습니다!',
-                    color=theme.OK_COLOR
-                )
-            )
+        )
 
 
     @commands.hybrid_command(name="목록", description="현재 재생목록을 확인합니다")
