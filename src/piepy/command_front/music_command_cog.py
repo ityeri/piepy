@@ -1,13 +1,13 @@
-from yarl import URL
 from yspy.__future__ import VideosSearch
 
 from discord import Embed
 from discord.ext import commands
 from pytubefix import YouTube
 from pytubefix.exceptions import RegexMatchError, VideoUnavailable
+from yarl import URL
 
 from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement, \
-    MusicRemovingResult, PlayerState
+    MusicRemovingResult
 from piepy.utils import theme
 from .next_music_select_view import NextMusicSelectView
 from .playlist_view import PlaylistView
