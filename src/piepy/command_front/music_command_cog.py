@@ -22,8 +22,7 @@ class MusicCommandCog(commands.Cog):
         self.player_manager: PlayerManager = player_manager
 
     async def check_user_voice_state(self, ctx: commands.Context, is_first: bool = False) -> bool:
-        # TODO is more better making player status wrapping feature in player manager
-        player = self.player_manager._get_player(ctx.guild.id)
+        player_state = self.player_manager.get_player_state(ctx.guild.id)
 
         if ctx.author.voice is None:
             await ctx.reply(
@@ -34,8 +33,8 @@ class MusicCommandCog(commands.Cog):
                 )
             )
             return False
-        elif player is not None:
-            player_voice_channel = player.voice_client.channel
+        elif player_state is not None:
+            player_voice_channel = player_state.current_channel
 
             if ctx.author.voice.channel != player_voice_channel:
                 await ctx.reply(
@@ -46,7 +45,7 @@ class MusicCommandCog(commands.Cog):
                     )
                 )
                 return False
-        elif player is None and not is_first:
+        elif player_state is None and not is_first:
             await ctx.reply(
                 embed=Embed(
                     title='BOT_DISCONNECTED',
@@ -195,7 +194,8 @@ class MusicCommandCog(commands.Cog):
         if not is_valid_context:
             return
 
-        musics = self.player_manager._get_player(ctx.guild.id).musics
+        # It's already guaranteed player state shouldn't be None value in the context validation logic above
+        musics = self.player_manager.get_player_state(ctx.guild.id).musics
         target_music = self.query_music_naturally(musics, flags.title_or_index)
 
         result = self.player_manager.rm_music(ctx.guild.id, music_element=target_music)
