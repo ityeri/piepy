@@ -6,7 +6,7 @@ from pytubefix import YouTube
 from pytubefix.exceptions import RegexMatchError, VideoUnavailable
 
 from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement, \
-    MusicRemovingResult
+    MusicRemovingResult, PlayerState
 from piepy.utils import theme
 
 
@@ -40,7 +40,7 @@ class MusicCommandCog(commands.Cog):
         self.bot: commands.Bot = bot
         self.player_manager: PlayerManager = player_manager
 
-    async def check_user_voice_state(self, ctx: commands.Context, is_first: bool = False) -> bool:
+    async def check_user_voice_state(self, ctx: commands.Context, is_first: bool = False) -> PlayerState | None:
         player_state = self.player_manager.get_player_state(ctx.guild.id)
 
         if ctx.author.voice is None:
@@ -51,7 +51,7 @@ class MusicCommandCog(commands.Cog):
                     color=theme.ERROR_COLOR
                 )
             )
-            return False
+            return None
         elif player_state is not None:
             player_voice_channel = player_state.current_channel
 
@@ -63,7 +63,7 @@ class MusicCommandCog(commands.Cog):
                         color=theme.ERROR_COLOR
                     )
                 )
-                return False
+                return None
         elif player_state is None and not is_first:
             await ctx.reply(
                 embed=Embed(
@@ -72,9 +72,9 @@ class MusicCommandCog(commands.Cog):
                     color=theme.ERROR_COLOR
                 )
             )
-            return False
+            return None
 
-        return True
+        return player_state
 
 
     class PlayFlags(commands.FlagConverter):
@@ -83,8 +83,8 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='재생', description='영상을 재생하거나 재생목록에 영상을 추가합니다')
     async def play(self, ctx: commands.Context, *, flags: PlayFlags):
-        is_valid_context = await self.check_user_voice_state(ctx, is_first=True)
-        if not is_valid_context:
+        player_state = await self.check_user_voice_state(ctx, is_first=True)
+        if not player_state:
             return
 
         is_youtube_url = True
@@ -170,8 +170,8 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='나가', description='재생을 멈추고 통화방을 나갑니다')
     async def stop(self, ctx: commands.Context):
-        is_valid_context = await self.check_user_voice_state(ctx)
-        if not is_valid_context:
+        player_state = await self.check_user_voice_state(ctx)
+        if not player_state:
             return
 
         await self.player_manager.stop(ctx.guild.id)
@@ -191,13 +191,11 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='빼기', description='재생목록에서 영상을 하나 제거합니다')
     async def rm(self, ctx: commands.Context, *, flags: OptionalMusicSelectFlags):
-        is_valid_context = await self.check_user_voice_state(ctx)
-        if not is_valid_context:
+        player_state = await self.check_user_voice_state(ctx)
+        if not player_state:
             return
 
-        # It's already guaranteed player state shouldn't be None value in the context validation logic above
-        # TODO when .title_or_index is null, displaying UI
-        musics = self.player_manager.get_player_state(ctx.guild.id).musics
+        musics = player_state.musics
         target_music = query_music_naturally(musics, flags.title_or_index)
 
         result = self.player_manager.rm_music(ctx.guild.id, music_element=target_music)
@@ -222,8 +220,8 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name="다음", description="다음 영상을 바로 재생하거나 지정한 영상으로 건너뜁니다")
     async def next(self, ctx: commands.Context, *, flags: OptionalMusicSelectFlags):
-        is_valid_context = await self.check_user_voice_state(ctx)
-        if not is_valid_context:
+        player_state = await self.check_user_voice_state(ctx)
+        if not player_state:
             return
 
         if flags.title_or_index is None:
@@ -237,8 +235,7 @@ class MusicCommandCog(commands.Cog):
                 )
             )
         else:
-            # It's already guaranteed player state shouldn't be None value in the context validation logic above
-            musics = self.player_manager.get_player_state(ctx.guild.id).musics
+            musics = player_state.musics
             target_music = query_music_naturally(musics, flags.title_or_index)
 
             self.player_manager.jump_to_music(ctx.guild.id, target_music)
