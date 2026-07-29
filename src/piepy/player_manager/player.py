@@ -1,3 +1,4 @@
+import asyncio
 from asyncio import AbstractEventLoop
 from collections.abc import Awaitable
 from dataclasses import dataclass
@@ -54,6 +55,8 @@ class Player:
         self.voice_client: VoiceClient | None = None
         self.running_loop: AbstractEventLoop | None = None
         self._order_manager: OrderManager[MusicElement] | None = None
+
+        self._step_waiters: list[asyncio.Future[None]] = []
 
     async def ready(
             self,
@@ -113,8 +116,15 @@ class Player:
             after=lambda e: self.running_loop.create_task(self._single_play_step(e))
         )
 
+    def _notify_step_waiters(self) -> None:
+        waiters, self._step_waiters = self._step_waiters, []
+        for future in waiters:
+            if not future.done():
+                future.set_result(None)
+
     async def _single_play_step(self, e: Exception | None = None):
         if self.status in [PlayerStatus.STOPPING, PlayerStatus.DONE]:
+            self._notify_step_waiters()
             return
 
         if self.voice_client.source:
@@ -125,10 +135,11 @@ class Player:
 
         if current_music is None:
             await self.voice_client.channel.send("다틈 ㅃ")
+            self._notify_step_waiters()
             return # TODO Here needs some play end processing
 
         self._play_wrap(await current_music.create_source())
-
+        self._notify_step_waiters()
 
     async def stop(self):
         if self.status != PlayerStatus.ACTIVE:
@@ -142,6 +153,7 @@ class Player:
         self.status = PlayerStatus.DONE
 
         await self.on_stop(PlayerStopEvent(self))
+
 
     def add_last(self, music: MusicElement):
         self._order_manager = self._order_manager.add_last(music).update_next_element()
@@ -165,6 +177,11 @@ class Player:
 
     def change_order_mode(self, is_loop: bool, is_random_order: bool):
         self._order_manager.change_order_mode(is_loop, is_random_order)
+
+    def subscribe_next_step(self) -> asyncio.Future[None]:
+        future: asyncio.Future[None] = self.running_loop.create_future()
+        self._step_waiters.append(future)
+        return future
 
     def to_player_state(self) -> PlayerState:
         return PlayerState(
