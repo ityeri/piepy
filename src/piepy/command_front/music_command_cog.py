@@ -11,6 +11,7 @@ from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddi
 from piepy.utils import theme
 from .next_music_select_view import NextMusicSelectView
 from .playlist_view import PlaylistView
+from .removing_music_select_view import RemovingMusicSelectView
 
 
 async def get_urls_by_query(query: str, limit: int) -> list[str]:
@@ -194,38 +195,22 @@ class MusicCommandCog(commands.Cog):
         )
 
 
-    class OptionalMusicSelectFlags(commands.FlagConverter):
-        title_or_index: str | None = \
-            commands.Flag(name='번호나_제목', description='영상의 번호나 제목 또는 제목의 일부를 입력하세요')
-
     @commands.hybrid_command(name='제거', description='재생목록에서 영상을 하나 제거합니다')
-    async def rm(self, ctx: commands.Context, *, flags: OptionalMusicSelectFlags):
+    async def rm(self, ctx: commands.Context):
         is_valid_context = await self.check_user_voice_state(ctx, is_first=True)
         if not is_valid_context:
             return
 
         player_state = self.player_manager.get_player_state(ctx.guild.id)
-        musics = player_state.musics
-        target_music = query_music_naturally(musics, flags.title_or_index)
 
-        result = await self.player_manager.rm_music(ctx.guild.id, music_element=target_music)
-
-        if result == MusicRemovingResult.REMOVED:
-            await ctx.reply(
-                embed=Embed(
-                    title='REMOVED',
-                    description=f'**{target_music.title}** 영상을 재생목록에서 제거했습니다',
-                    color=theme.OK_COLOR
-                )
+        await ctx.reply(
+            view=RemovingMusicSelectView(
+                '재생목록에서 뺄 영상을 골라 주세요',
+                self.player_manager,
+                player_state.guild_id,
+                player_state.musics
             )
-        elif result == MusicRemovingResult.SKIPPED_AND_REMOVED:
-            await ctx.reply(
-                embed=Embed(
-                    title='SKIPPED_AND_REMOVED',
-                    description=f'**{target_music.title}** 영상을 건너뛴 후, 재생목록에서 제거했습니다',
-                    color=theme.OK_COLOR
-                )
-            )
+        )
 
 
     @commands.hybrid_command(name="다음", description="다음 영상을 바로 재생하거나 지정한 영상으로 건너뜁니다")
@@ -256,14 +241,12 @@ class MusicCommandCog(commands.Cog):
         player_state = self.player_manager.get_player_state(ctx.guild.id)
         musics = player_state.musics
 
-        playlist_view = PlaylistView(
-            '현재 재생목록',
-            self.player_manager,
-            player_state.guild_id,
-            musics,
-            player_state.current_music
-        )
-
         await ctx.reply(
-            view=playlist_view,
+            view=PlaylistView(
+                '현재 재생목록',
+                self.player_manager,
+                player_state.guild_id,
+                musics,
+                player_state.current_music
+            )
         )
