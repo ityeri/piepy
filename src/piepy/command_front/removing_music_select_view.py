@@ -41,7 +41,7 @@ class RemovingMusicSelectView(LayoutView):
 
     async def on_select(self, interaction: discord.Interaction):
         value = interaction.data['values'][0]
-        target_music: MusicElement = next(filter(lambda m: m.id == value[1:], self.musics))
+        target_music: MusicElement = next(filter(lambda m: m.id == value, self.musics))
         player_state = self.player_manager.get_player_state(self.guild_id)
         response: InteractionResponse = interaction.response
 
@@ -55,7 +55,7 @@ class RemovingMusicSelectView(LayoutView):
             )
             return
 
-        result = self.player_manager.rm_music(self.guild_id, target_music)
+        result = await self.player_manager.rm_music(self.guild_id, target_music)
 
         if result == MusicRemovingResult.PLAYER_NOT_FOUND:
             await response.send_message(
