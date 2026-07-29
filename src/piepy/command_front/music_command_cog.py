@@ -268,7 +268,14 @@ class MusicCommandCog(commands.Cog):
         player_state = self.player_manager.get_player_state(ctx.guild.id)
         musics = player_state.musics
 
-        playlist_view = PlaylistView('현재 재생목록', musics, player_state.current_music)
+        playlist_view = PlaylistView(
+            '현재 재생목록',
+            self.player_manager,
+            player_state.guild_id,
+            musics,
+            player_state.current_music
+        )
+
         await ctx.reply(
             view=playlist_view,
         )

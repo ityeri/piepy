@@ -1,7 +1,9 @@
-from discord import Emoji
-from discord.ui import LayoutView, Container, Section, TextDisplay, Thumbnail, Button
+import discord
+from discord import InteractionResponse
+from discord import Embed
+from discord.ui import LayoutView, Container, Section, TextDisplay, Button
 
-from piepy.player_manager import MusicElement
+from piepy.player_manager import MusicElement, PlayerManager
 from piepy.utils import theme
 
 
@@ -31,9 +33,18 @@ def to_natural_timecode(
     return output
 
 class PlaylistView(LayoutView):
-    def __init__(self, title: str, musics: list[MusicElement], current_music: MusicElement):
+    def __init__(
+            self,
+            title: str,
+            player_manager: PlayerManager,
+            guild_id: int,
+            musics: list[MusicElement],
+            current_music: MusicElement
+    ):
         super().__init__(timeout=None)
 
+        self.player_manager: PlayerManager = player_manager
+        self.guild_id: int = guild_id
         self.musics: list[MusicElement] = musics
         self.current_music: MusicElement = current_music
 
@@ -51,10 +62,43 @@ class PlaylistView(LayoutView):
                             if music == self.current_music
                             else f'길이: **{to_natural_timecode(music.length)}**'
                         ),
-                        accessory=Button(label='바로 재생'),
+                        accessory=Button(label='바로 재생', custom_id=music.id),
                     )
                     for music in self.musics
                 ],
                 accent_color=theme.OK_COLOR
             )
         )
+
+    @discord.ui.button
+    async def play_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        target_music: MusicElement = next(filter(lambda m: m.id == button.custom_id, self.musics))
+
+        is_success = self.player_manager.jump_to_music(self.guild_id, target_music)
+        response: InteractionResponse = interaction.response
+
+        if not is_success:
+            await response.send_message(
+                embed=Embed(
+                    title='BOT_DISCONNECTED',
+                    description='뮤직봇 기능을 사용중이지 않습니다! `/재생` 명령어를 써보세요',
+                    color=theme.ERROR_COLOR
+                )
+            )
+        else:
+            if target_music == self.current_music:
+                await response.send_message(
+                    embed=Embed(
+                        title='REPLAYED',
+                        description=f'**{target_music.title}** 영상을 다시 재생합니다!',
+                        color=theme.OK_COLOR
+                    )
+                )
+            else:
+                await response.send_message(
+                    embed=Embed(
+                        title='SKIPPED_TO_TARGET',
+                        description=f'**{target_music.title}** 영상으로 건너 뛰었습니다!',
+                        color=theme.OK_COLOR
+                    )
+                )
