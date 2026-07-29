@@ -208,7 +208,7 @@ class MusicCommandCog(commands.Cog):
         musics = player_state.musics
         target_music = query_music_naturally(musics, flags.title_or_index)
 
-        result = self.player_manager.rm_music(ctx.guild.id, music_element=target_music)
+        result = await self.player_manager.rm_music(ctx.guild.id, music_element=target_music)
 
         if result == MusicRemovingResult.REMOVED:
             await ctx.reply(

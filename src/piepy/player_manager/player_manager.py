@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 from enum import Enum, auto
 
@@ -99,7 +100,7 @@ class PlayerManager:
 
         return list(player.musics)
 
-    def rm_music(self, guild_id: int, music_element: MusicElement) -> MusicRemovingResult:
+    async def rm_music(self, guild_id: int, music_element: MusicElement) -> MusicRemovingResult:
         player = self._get_player(guild_id)
         if player is None:
             return MusicRemovingResult.PLAYER_NOT_FOUND
@@ -107,7 +108,9 @@ class PlayerManager:
         skipped = False
 
         if music_element == player.current_music:
+            future = player.subscribe_next_step()
             player.jump_to(None)
+            await asyncio.wait_for(future, timeout=None)
             skipped = True
 
         player.rm(music_element)
