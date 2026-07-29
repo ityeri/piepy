@@ -6,10 +6,10 @@ from pytubefix import YouTube
 from pytubefix.exceptions import RegexMatchError, VideoUnavailable
 from yarl import URL
 
-from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement, \
-    MusicRemovingResult
+from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement
 from piepy.utils import theme
 from .next_music_select_view import NextMusicSelectView
+from .order_mode_select_view import OrderModeSelectView
 from .playlist_view import PlaylistView
 from .removing_music_select_view import RemovingMusicSelectView
 
@@ -194,7 +194,6 @@ class MusicCommandCog(commands.Cog):
             )
         )
 
-
     @commands.hybrid_command(name='제거', description='재생목록에서 영상을 하나 제거합니다')
     async def rm(self, ctx: commands.Context):
         is_valid_context = await self.check_user_voice_state(ctx, is_first=True)
@@ -212,8 +211,7 @@ class MusicCommandCog(commands.Cog):
             )
         )
 
-
-    @commands.hybrid_command(name="다음", description="다음 영상을 바로 재생하거나 지정한 영상으로 건너뜁니다")
+    @commands.hybrid_command(name='다음', description='다음 영상을 바로 재생하거나 지정한 영상으로 건너뜁니다')
     async def next(self, ctx: commands.Context):
         is_valid_context = await self.check_user_voice_state(ctx)
         if not is_valid_context:
@@ -231,8 +229,7 @@ class MusicCommandCog(commands.Cog):
             )
         )
 
-
-    @commands.hybrid_command(name="목록", description="현재 재생목록을 확인합니다")
+    @commands.hybrid_command(name='목록', description='현재 재생목록을 확인합니다')
     async def list(self, ctx: commands.Context):
         is_valid_context = await self.check_user_voice_state(ctx)
         if not is_valid_context:
@@ -248,5 +245,19 @@ class MusicCommandCog(commands.Cog):
                 player_state.guild_id,
                 musics,
                 player_state.current_music
+            )
+        )
+
+    @commands.hybrid_command(name='순서', description='반복할지, 한번만 재생할지, 무작위로 재생할지 등을 설정합니다')
+    async def order(self, ctx: commands.Context):
+        is_valid_context = await self.check_user_voice_state(ctx)
+        if not is_valid_context:
+            return
+
+        await ctx.reply(
+            view=OrderModeSelectView(
+                '어떤 순서로 영상을 재생할까요?',
+                self.player_manager,
+                ctx.guild.id
             )
         )
