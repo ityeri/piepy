@@ -61,7 +61,7 @@ class NextMusicSelectView(LayoutView):
                     title='MUSIC_NOT_FOUND',
                     description=f'해당 영상은 현재 재생목록에 없습니다!',
                     color=theme.ERROR_COLOR
-                ).set_footer(text='/목록 명령어로 새 재생목록을 띄워 보세요')
+                ).set_footer(text='/목록 명령어로 새 최신 재생목록을 띄워 보세요')
             )
             return
 
