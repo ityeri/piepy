@@ -1,3 +1,4 @@
+from yarl import URL
 from yspy.__future__ import VideosSearch
 
 from discord import Embed
@@ -8,6 +9,7 @@ from pytubefix.exceptions import RegexMatchError, VideoUnavailable
 from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement, \
     MusicRemovingResult, PlayerState
 from piepy.utils import theme
+from .playlist_view import PlaylistView
 
 
 async def get_urls_by_query(query: str, limit: int) -> list[str]:
@@ -33,6 +35,12 @@ def query_music_naturally(musics: list[MusicElement], title_or_index: str) -> Mu
                 return checking_music
 
     return None
+
+def ensure_scheme(url_str: str, scheme: str = 'https') -> URL:
+    url = URL(url_str)
+    if not url.scheme:
+        url = URL(f"{scheme}://{url_str}")
+    return url
 
 
 class MusicCommandCog(commands.Cog):
@@ -125,7 +133,7 @@ class MusicCommandCog(commands.Cog):
         music = UrlStreamMusicElement(
             f'yt_video_{yt.video_id}',
             title=yt.title,
-            url=url,
+            url=str(ensure_scheme(url)),
             title_image_url=yt.thumbnail_url,
             length=yt.length,
             stream_url=audio_stream_url
@@ -154,7 +162,7 @@ class MusicCommandCog(commands.Cog):
                     title='ADDED_TO_PLAYLIST',
                     description=f'**{music.title}** 영상을 재생목록에 추가했습니다',
                     color=theme.OK_COLOR,
-                    url = music.url
+                    url=music.url
             ).set_thumbnail(url=music.title_image_url)
                 .set_footer(text=f'검색어: {query}' if query is not None else None)
             )
@@ -249,3 +257,17 @@ class MusicCommandCog(commands.Cog):
                     color=theme.OK_COLOR
                 )
             )
+
+    @commands.hybrid_command(name="목록", description="현재 재생목록을 확인합니다")
+    async def list(self, ctx: commands.Context):
+        is_valid_context = await self.check_user_voice_state(ctx)
+        if not is_valid_context:
+            return
+
+        player_state = self.player_manager.get_player_state(ctx.guild.id)
+        musics = player_state.musics
+
+        playlist_view = PlaylistView(musics, player_state.current_music)
+        await ctx.reply(
+            view=playlist_view,
+        )
