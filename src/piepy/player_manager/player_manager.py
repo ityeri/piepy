@@ -33,11 +33,13 @@ class PlayerState:
     status: PlayerStatus
     musics: list[MusicElement]
 
-    current_music: MusicElement
-    next_music: MusicElement
+    current_music: MusicElement | None
+    next_music: MusicElement | None
 
     is_loop: bool
     is_random_order: bool
+
+    current_channel: VoiceChannel | None
 
     @staticmethod
     def from_player(player: Player) -> PlayerState:
@@ -50,7 +52,9 @@ class PlayerState:
             next_music=player.next_music,
 
             is_loop=player.is_loop,
-            is_random_order=player.is_random_order
+            is_random_order=player.is_random_order,
+
+            current_channel=player.voice_client.channel
         )
 
 
