@@ -258,6 +258,7 @@ class MusicCommandCog(commands.Cog):
                 )
             )
 
+
     @commands.hybrid_command(name="목록", description="현재 재생목록을 확인합니다")
     async def list(self, ctx: commands.Context):
         is_valid_context = await self.check_user_voice_state(ctx)
@@ -267,7 +268,7 @@ class MusicCommandCog(commands.Cog):
         player_state = self.player_manager.get_player_state(ctx.guild.id)
         musics = player_state.musics
 
-        playlist_view = PlaylistView(musics, player_state.current_music)
+        playlist_view = PlaylistView('현재 재생목록', musics, player_state.current_music)
         await ctx.reply(
             view=playlist_view,
         )

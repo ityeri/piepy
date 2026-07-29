@@ -31,7 +31,7 @@ def to_natural_timecode(
     return output
 
 class PlaylistView(LayoutView):
-    def __init__(self, musics: list[MusicElement], current_music: MusicElement):
+    def __init__(self, title: str, musics: list[MusicElement], current_music: MusicElement):
         super().__init__(timeout=None)
 
         self.musics: list[MusicElement] = musics
@@ -39,7 +39,7 @@ class PlaylistView(LayoutView):
 
         self.add_item(
             Container(
-                TextDisplay('## 현재 재생목록'),
+                TextDisplay(f'## {title}'),
                 *[
                     Section(
                         TextDisplay(
