@@ -1,6 +1,6 @@
 import discord
 from discord import InteractionResponse, Embed
-from discord.ui import LayoutView, Container, Select, TextDisplay, Section, Button, ActionRow
+from discord.ui import LayoutView, Container, Select, TextDisplay, ActionRow
 
 from piepy.player_manager import MusicElement, PlayerManager
 from piepy.utils import theme
