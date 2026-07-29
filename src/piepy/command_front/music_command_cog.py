@@ -40,7 +40,7 @@ class MusicCommandCog(commands.Cog):
         self.bot: commands.Bot = bot
         self.player_manager: PlayerManager = player_manager
 
-    async def check_user_voice_state(self, ctx: commands.Context, is_first: bool = False) -> PlayerState | None:
+    async def check_user_voice_state(self, ctx: commands.Context, is_first: bool = False) -> bool:
         player_state = self.player_manager.get_player_state(ctx.guild.id)
 
         if ctx.author.voice is None:
@@ -51,7 +51,7 @@ class MusicCommandCog(commands.Cog):
                     color=theme.ERROR_COLOR
                 )
             )
-            return None
+            return False
         elif player_state is not None:
             player_voice_channel = player_state.current_channel
 
@@ -63,7 +63,7 @@ class MusicCommandCog(commands.Cog):
                         color=theme.ERROR_COLOR
                     )
                 )
-                return None
+                return False
         elif player_state is None and not is_first:
             await ctx.reply(
                 embed=Embed(
@@ -72,9 +72,9 @@ class MusicCommandCog(commands.Cog):
                     color=theme.ERROR_COLOR
                 )
             )
-            return None
+            return False
 
-        return player_state
+        return True
 
 
     class PlayFlags(commands.FlagConverter):
@@ -83,8 +83,8 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='재생', description='영상을 재생하거나 재생목록에 영상을 추가합니다')
     async def play(self, ctx: commands.Context, *, flags: PlayFlags):
-        player_state = await self.check_user_voice_state(ctx, is_first=True)
-        if not player_state:
+        is_valid_context = await self.check_user_voice_state(ctx, is_first=True)
+        if not is_valid_context:
             return
 
         is_youtube_url = True
@@ -123,12 +123,12 @@ class MusicCommandCog(commands.Cog):
         audio_stream_url = stream.url
 
         music = UrlStreamMusicElement(
-                f'yt_video_{yt.video_id}',
-                title=yt.title,
-                url=url,
-                title_image_url=yt.thumbnail_url,
-                length=yt.length,
-                stream_url=audio_stream_url
+            f'yt_video_{yt.video_id}',
+            title=yt.title,
+            url=url,
+            title_image_url=yt.thumbnail_url,
+            length=yt.length,
+            stream_url=audio_stream_url
             )
 
         music_add_result = await self.player_manager.play_or_add(
@@ -170,8 +170,8 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='나가', description='재생을 멈추고 통화방을 나갑니다')
     async def stop(self, ctx: commands.Context):
-        player_state = await self.check_user_voice_state(ctx)
-        if not player_state:
+        is_valid_context = await self.check_user_voice_state(ctx, is_first=True)
+        if not is_valid_context:
             return
 
         await self.player_manager.stop(ctx.guild.id)
@@ -191,10 +191,11 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='빼기', description='재생목록에서 영상을 하나 제거합니다')
     async def rm(self, ctx: commands.Context, *, flags: OptionalMusicSelectFlags):
-        player_state = await self.check_user_voice_state(ctx)
-        if not player_state:
+        is_valid_context = await self.check_user_voice_state(ctx, is_first=True)
+        if not is_valid_context:
             return
 
+        player_state = self.player_manager.get_player_state(ctx.guild.id)
         musics = player_state.musics
         target_music = query_music_naturally(musics, flags.title_or_index)
 
@@ -220,8 +221,8 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name="다음", description="다음 영상을 바로 재생하거나 지정한 영상으로 건너뜁니다")
     async def next(self, ctx: commands.Context, *, flags: OptionalMusicSelectFlags):
-        player_state = await self.check_user_voice_state(ctx)
-        if not player_state:
+        is_valid_context = await self.check_user_voice_state(ctx)
+        if not is_valid_context:
             return
 
         if flags.title_or_index is None:
@@ -235,6 +236,7 @@ class MusicCommandCog(commands.Cog):
                 )
             )
         else:
+            player_state = self.player_manager.get_player_state(ctx.guild.id)
             musics = player_state.musics
             target_music = query_music_naturally(musics, flags.title_or_index)
 
