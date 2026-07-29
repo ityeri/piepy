@@ -62,11 +62,23 @@ class Player:
         self.status = PlayerStatus.READY
 
     @property
-    def musics(self) -> list[MusicElement]: return self._order_manager.elements
+    def musics(self) -> list[MusicElement] | None:
+        if self._order_manager is not None:
+            return self._order_manager.elements
+        else:
+            return None
     @property
-    def current_music(self) -> MusicElement | None: return self._order_manager.current_element
+    def current_music(self) -> MusicElement | None:
+        if self._order_manager is not None:
+            return self._order_manager.current_element
+        else:
+            return None
     @property
-    def next_music(self) -> MusicElement | None: return self._order_manager.next_element
+    def next_music(self) -> MusicElement | None:
+        if self._order_manager is not None:
+            return self._order_manager.next_element
+        else:
+            return None
 
     @property
     def is_loop(self) -> bool: return self._order_manager.is_loop
