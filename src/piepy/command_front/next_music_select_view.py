@@ -52,8 +52,20 @@ class NextMusicSelectView(LayoutView):
         else:
             target_music: MusicElement | None = next(filter(lambda m: m.id == value[1:], self.musics))
 
-        is_success = self.player_manager.jump_to_music(self.guild_id, target_music)
+        player_state = self.player_manager.get_player_state(self.guild_id)
         response: InteractionResponse = interaction.response
+
+        if target_music not in player_state.musics:
+            await response.send_message(
+                embed=Embed(
+                    title='MUSIC_NOT_FOUND',
+                    description=f'해당 영상은 현재 재생목록에 없습니다!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text='/목록 명령어로 새 재생목록을 띄워 보세요')
+            )
+            return
+
+        is_success = self.player_manager.jump_to_music(self.guild_id, target_music)
 
         if not is_success:
             await response.send_message(
@@ -63,38 +75,31 @@ class NextMusicSelectView(LayoutView):
                     color=theme.ERROR_COLOR
                 )
             )
-        else:
-            player_state = self.player_manager.get_player_state(self.guild_id)
+            return
 
-            if value == 'next':
-                await response.send_message(
-                    embed=Embed(
-                        title='SKIPPED_TO_NEXT',
-                        description='바로 다음 영상을 재생합니다!',
-                        color=theme.OK_COLOR
-                    )
+        player_state = self.player_manager.get_player_state(self.guild_id)
+
+        if value == 'next':
+            await response.send_message(
+                embed=Embed(
+                    title='SKIPPED_TO_NEXT',
+                    description='바로 다음 영상을 재생합니다!',
+                    color=theme.OK_COLOR
                 )
-            elif target_music not in player_state.musics:
-                await response.send_message(
-                    embed=Embed(
-                        title='MUSIC_NOT_FOUND',
-                        description=f'해당 영상은 재생목록에 없습니다!',
-                        color=theme.ERROR_COLOR
-                    ).set_footer(text='`/목록` 명령어로 새 재생목록을 띄워 보세요')
+            )
+        elif target_music == player_state.current_music:
+            await response.send_message(
+                embed=Embed(
+                    title='REPLAYED',
+                    description=f'**{target_music.title}** 영상을 다시 재생합니다!',
+                    color=theme.OK_COLOR
                 )
-            elif target_music == player_state.current_music:
-                await response.send_message(
-                    embed=Embed(
-                        title='REPLAYED',
-                        description=f'**{target_music.title}** 영상을 다시 재생합니다!',
-                        color=theme.OK_COLOR
-                    )
+            )
+        else:
+            await response.send_message(
+                embed=Embed(
+                    title='SKIPPED_TO_TARGET',
+                    description=f'**{target_music.title}** 영상으로 건너 뛰었습니다!',
+                    color=theme.OK_COLOR
                 )
-            else:
-                await response.send_message(
-                    embed=Embed(
-                        title='SKIPPED_TO_TARGET',
-                        description=f'**{target_music.title}** 영상으로 건너 뛰었습니다!',
-                        color=theme.OK_COLOR
-                    )
-                )
+            )
