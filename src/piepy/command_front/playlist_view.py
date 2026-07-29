@@ -93,7 +93,15 @@ class PlaylistView(LayoutView):
         else:
             player_state = self.player_manager.get_player_state(self.guild_id)
 
-            if target_music == player_state.current_music:
+            if target_music not in player_state.musics:
+                await response.send_message(
+                    embed=Embed(
+                        title='MUSIC_NOT_FOUND',
+                        description=f'해당 영상은 재생목록에 없습니다!',
+                        color=theme.ERROR_COLOR
+                    ).set_footer(text='`/목록` 명령어로 새 재생목록을 띄워 보세요')
+                )
+            elif target_music == player_state.current_music:
                 await response.send_message(
                     embed=Embed(
                         title='REPLAYED',
