@@ -198,7 +198,7 @@ class MusicCommandCog(commands.Cog):
         title_or_index: str | None = \
             commands.Flag(name='번호나_제목', description='영상의 번호나 제목 또는 제목의 일부를 입력하세요')
 
-    @commands.hybrid_command(name='빼기', description='재생목록에서 영상을 하나 제거합니다')
+    @commands.hybrid_command(name='제거', description='재생목록에서 영상을 하나 제거합니다')
     async def rm(self, ctx: commands.Context, *, flags: OptionalMusicSelectFlags):
         is_valid_context = await self.check_user_voice_state(ctx, is_first=True)
         if not is_valid_context:
