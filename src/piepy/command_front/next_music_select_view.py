@@ -1,6 +1,6 @@
 import discord
 from discord import InteractionResponse, Embed
-from discord.ui import LayoutView, Container, Select, TextDisplay, Section, Button
+from discord.ui import LayoutView, Container, Select, TextDisplay, Section, Button, ActionRow
 
 from piepy.player_manager import MusicElement, PlayerManager
 from piepy.utils import theme
@@ -23,23 +23,24 @@ class NextMusicSelectView(LayoutView):
         select = Select(
             placeholder='영상을 선택해 주세요',
             options=[
-                discord.SelectOption(
-                    label='다음 영상으로 건너뛰기',
-                    description='다음 순서의 영상으로 건너 뜁니다. 무작위 순서 모드라면, 무작위 영상으로 건너 뜁니다',
-                    value='next'
-                ),
                 *[
                     discord.SelectOption(label=music.title, value='#' + music.id)
                     for music in self.musics
-                ]
-            ]
+                ],
+                discord.SelectOption(
+                    label='▶️ 다음 영상으로 건너뛰기',
+                    description='다음 순서의 영상으로 건너 뜁니다. 무작위 순서 모드라면, 무작위 영상으로 건너 뜁니다',
+                    value='next'
+                )
+            ],
         )
         select.callback = self.on_select
 
         self.add_item(
             Container(
-                TextDisplay(f'## {title}'),
-                select,
+                TextDisplay(f'### {title}'),
+                ActionRow(select),
+                accent_color=theme.OK_COLOR
             )
         )
 
@@ -73,7 +74,7 @@ class NextMusicSelectView(LayoutView):
                         color=theme.OK_COLOR
                     )
                 )
-            elif target_music == player_state.guild_id:
+            elif target_music == player_state.current_music:
                 await response.send_message(
                     embed=Embed(
                         title='REPLAYED',
