@@ -36,7 +36,7 @@ class Player:
         self.guild_id: Final[int] = guild_id
         self.session_id: Final[UUID] = session_id if session_id is not None else uuid.uuid4()
         self.status: PlayerStatus = PlayerStatus.BEFORE_READY
-        self.on_stop: PlayerStopEvent.Listener = on_stop
+        self.stop_callback: PlayerStopEvent.Listener = on_stop
 
         self.voice_client: VoiceClient | None = None
         self.running_loop: AbstractEventLoop | None = None
@@ -133,7 +133,7 @@ class Player:
 
         self.status = PlayerStatus.STOPPING
 
-        await self.on_stop(PlayerStopEvent(self))
+        await self.stop_callback(PlayerStopEvent(self))
 
         self.voice_client.stop()
         await self.voice_client.disconnect()
