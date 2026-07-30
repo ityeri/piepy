@@ -38,17 +38,17 @@ class OrderManager[T: Hashable]:
             is_random_order=is_random_order
         )
 
-    def _get_next_element_of(self, current_element: T | None) -> T:
+    def _get_next_element_of(self, current_element: T | None, used_elements: set[T] | None = None) -> T | None:
         if self.is_random_order:
-            available_elements = set(self.elements) - self.used_elements
+            effective_used = used_elements if used_elements is not None else self.used_elements
+            available = set(self.elements) - (effective_used | {current_element})
 
-            if available_elements:
-                return random.choice(list(available_elements))
+            if available:
+                return random.choice(list(available))
+            elif self.is_loop:
+                return random.choice(self.elements)
             else:
-                if self.is_loop:
-                    return random.choice(self.elements)
-                else:
-                    return None
+                return None
 
         else:
             if current_element is None:
@@ -65,30 +65,28 @@ class OrderManager[T: Hashable]:
                 return self.elements[next_index]
 
     def step(self) -> OrderManager[T]:
-        next_element = self._get_next_element_of(self.next_element)
-
         if self.is_random_order:
-            available_elements = set(self.elements) - self.used_elements
+            next_target_element = {self.next_element} if self.next_element is not None else set()
+            tentative_used = self.used_elements | next_target_element
 
-            if available_elements:
-                used_elements = self.used_elements | {self.next_element}
+            if not set(self.elements) - tentative_used and self.is_loop:
+                new_used = set()
+                next_element = self._get_next_element_of(None, new_used)
             else:
-                if self.is_loop:
-                    used_elements = set()
-                else:
-                    used_elements = self.used_elements
-
+                new_used = tentative_used
+                next_element = self._get_next_element_of(self.next_element, new_used)
         else:
-            used_elements = None
+            new_used = None
+            next_element = self._get_next_element_of(self.next_element, new_used)
 
         return OrderManager(
             elements=self.elements,
             current_element=self.next_element,
             next_element=next_element,
-            used_elements=used_elements,
+            used_elements=new_used,
 
-            is_loop = self.is_loop,
-            is_random_order = self.is_random_order
+            is_loop=self.is_loop,
+            is_random_order=self.is_random_order
         )
 
     def change_order_mode(self, is_loop: bool, is_random_order: bool) -> OrderManager[T]:
