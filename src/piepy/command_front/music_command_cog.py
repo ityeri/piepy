@@ -1,10 +1,9 @@
-from yspy.__future__ import VideosSearch
-
 from discord import Embed
 from discord.ext import commands
 from pytubefix import YouTube
 from pytubefix.exceptions import RegexMatchError, VideoUnavailable
 from yarl import URL
+from yspy.__future__ import VideosSearch
 
 from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement, \
     PlayerController, PlayerStatus
@@ -75,6 +74,8 @@ class MusicCommandCog(commands.Cog):
                     )
                 )
                 return None
+            else:
+                return player_controller
         elif player_controller is None and not auto_ready:
             await ctx.reply(
                 embed=Embed(
@@ -85,9 +86,9 @@ class MusicCommandCog(commands.Cog):
             )
             return None
 
-        player_controller = await self.player_manager.ready_player(ctx.guild.id, ctx.author.voice.channel)
+        created_controller = await self.player_manager.ready_player(ctx.guild.id, ctx.author.voice.channel)
 
-        return player_controller
+        return created_controller
 
 
     class PlayFlags(commands.FlagConverter):
@@ -97,7 +98,7 @@ class MusicCommandCog(commands.Cog):
     @commands.hybrid_command(name='재생', description='영상을 재생하거나 재생목록에 영상을 추가합니다')
     async def play(self, ctx: commands.Context, *, flags: PlayFlags):
         player_controller = await self.check_user_voice_state(ctx, auto_ready=True)
-        if not player_controller:
+        if player_controller is None:
             return
 
         is_youtube_url = True
@@ -182,7 +183,7 @@ class MusicCommandCog(commands.Cog):
     @commands.hybrid_command(name='나가', description='재생을 멈추고 통화방을 나갑니다')
     async def stop(self, ctx: commands.Context):
         player_controller = await self.check_user_voice_state(ctx)
-        if not player_controller:
+        if player_controller is None:
             return
 
         await player_controller.stop()
@@ -198,7 +199,7 @@ class MusicCommandCog(commands.Cog):
     @commands.hybrid_command(name='제거', description='재생목록에서 영상을 하나 제거합니다')
     async def rm(self, ctx: commands.Context):
         player_controller = await self.check_user_voice_state(ctx)
-        if not player_controller:
+        if player_controller is None:
             return
 
         await ctx.reply(
@@ -208,7 +209,7 @@ class MusicCommandCog(commands.Cog):
     @commands.hybrid_command(name='다음', description='다음 영상을 바로 재생하거나 지정한 영상으로 건너뜁니다')
     async def next(self, ctx: commands.Context):
         player_controller = await self.check_user_voice_state(ctx)
-        if not player_controller:
+        if player_controller is None:
             return
 
         await ctx.reply(
@@ -218,7 +219,7 @@ class MusicCommandCog(commands.Cog):
     @commands.hybrid_command(name='목록', description='현재 재생목록을 확인합니다')
     async def list(self, ctx: commands.Context):
         player_controller = await self.check_user_voice_state(ctx)
-        if not player_controller:
+        if player_controller is None:
             return
 
         await ctx.reply(
@@ -228,7 +229,7 @@ class MusicCommandCog(commands.Cog):
     @commands.hybrid_command(name='순서', description='반복할지, 한번만 재생할지, 무작위로 재생할지 등을 설정합니다')
     async def order(self, ctx: commands.Context):
         player_controller = await self.check_user_voice_state(ctx)
-        if not player_controller:
+        if player_controller is None:
             return
 
         await ctx.reply(
