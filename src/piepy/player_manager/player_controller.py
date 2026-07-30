@@ -23,6 +23,10 @@ class StateValidationFailedReason(_OperationResult):
     NOT_YET_ACTIVE = (auto(), False)
     ALREADY_STOPPED = (auto(), False)
 
+class MusicAddingResult(_OperationResult):
+    ADDED = (auto(), True)
+    DUPLICATED = (auto(), False)
+
 class MusicRemovingResult(_OperationResult):
     REMOVED = (auto(), True)
     SKIPPED_AND_REMOVED = (auto(), True)
@@ -73,12 +77,15 @@ class PlayerController:
         else:
             return None
 
-    async def add_music(self, music: MusicElement) -> StateValidationFailedReason | None:
+    async def add_music(self, music: MusicElement) -> MusicAddingResult | StateValidationFailedReason:
         if (result := self._validate_state()) is not None:
             return result
 
-        self._player.add_last(music)
-        return None
+        if music in self._player.musics:
+            return MusicAddingResult.DUPLICATED
+        else:
+            self._player.add_last(music)
+            return MusicAddingResult.ADDED
 
     async def stop(self) -> StateValidationFailedReason | None:
         if (result := self._validate_state()) is not None:
