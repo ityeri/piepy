@@ -47,7 +47,7 @@ class NextMusicSelectView(LayoutView):
         if music_id == 'next':
             target_music: MusicElement | None = None
         else:
-            target_music: MusicElement | None = next(filter(lambda m: m.id == music_id[1:], self.musics))
+            target_music: MusicElement | None = next(filter(lambda m: m.id == music_id[1:], self.controller.musics))
 
             if target_music not in self.controller.musics:
                 await response.send_message(
