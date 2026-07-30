@@ -47,10 +47,21 @@ class NextMusicSelectView(LayoutView):
         )
 
     async def on_select(self, interaction: discord.Interaction):
-        value = interaction.data['values'][0]
         player_state = self.player_manager.get_player_state(self.guild_id)
         response: InteractionResponse = interaction.response
 
+        if player_state is None:
+            await response.send_message(
+                embed=Embed(
+                    title='BOT_DISCONNECTED',
+                    description='뮤직봇 기능을 사용중이지 않습니다! `/재생` 명령어를 써보세요',
+                    color=theme.ERROR_COLOR
+                )
+            )
+            return
+
+        value = interaction.data['values'][0]
+        player_state = self.player_manager.get_player_state(self.guild_id)
         if value == 'next':
             target_music: MusicElement | None = None
         else:
@@ -66,19 +77,7 @@ class NextMusicSelectView(LayoutView):
                 )
                 return
 
-        is_success = self.player_manager.jump_to_music(self.guild_id, target_music)
-
-        if not is_success:
-            await response.send_message(
-                embed=Embed(
-                    title='BOT_DISCONNECTED',
-                    description='뮤직봇 기능을 사용중이지 않습니다! `/재생` 명령어를 써보세요',
-                    color=theme.ERROR_COLOR
-                )
-            )
-            return
-
-        player_state = self.player_manager.get_player_state(self.guild_id)
+        self.player_manager.jump_to_music(self.guild_id, target_music)
 
         if value == 'next':
             await response.send_message(

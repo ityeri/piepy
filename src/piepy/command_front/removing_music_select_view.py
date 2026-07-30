@@ -40,12 +40,22 @@ class RemovingMusicSelectView(LayoutView):
         )
 
     async def on_select(self, interaction: discord.Interaction):
-        value = interaction.data['values'][0]
-        target_music: MusicElement = next(filter(lambda m: m.id == value, self.musics))
         player_state = self.player_manager.get_player_state(self.guild_id)
         response: InteractionResponse = interaction.response
 
-        if target_music not in player_state.musics:
+        if player_state is None:
+            await response.send_message(
+                embed=Embed(
+                    title='BOT_DISCONNECTED',
+                    description='뮤직봇 기능을 사용중이지 않습니다! `/재생` 명령어를 써보세요',
+                    color=theme.ERROR_COLOR
+                )
+            )
+
+        value = interaction.data['values'][0]
+        target_music: MusicElement = next(filter(lambda m: m.id == value, self.musics))
+
+        if target_music not in player_state.musics: # TODO what if using this view when bot is disconnected
             await response.send_message(
                 embed=Embed(
                     title='MUSIC_NOT_FOUND',
@@ -57,15 +67,7 @@ class RemovingMusicSelectView(LayoutView):
 
         result = await self.player_manager.rm_music(self.guild_id, target_music)
 
-        if result == MusicRemovingResult.PLAYER_NOT_FOUND:
-            await response.send_message(
-                embed=Embed(
-                    title='BOT_DISCONNECTED',
-                    description='뮤직봇 기능을 사용중이지 않습니다! `/재생` 명령어를 써보세요',
-                    color=theme.ERROR_COLOR
-                )
-            )
-        elif result == MusicRemovingResult.REMOVED:
+        if result == MusicRemovingResult.REMOVED:
             await response.send_message(
                 embed=Embed(
                     title='REPLAYED',
