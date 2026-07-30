@@ -47,6 +47,7 @@ class NextMusicSelectView(LayoutView):
         if music_id == 'next':
             target_music: MusicElement | None = None
         else:
+            # TODO bug: what if all musics are removed? (and any other views..) (unifying view context validate logic)
             target_music: MusicElement | None = next(filter(lambda m: m.id == music_id[1:], self.controller.musics))
 
             if target_music not in self.controller.musics:
