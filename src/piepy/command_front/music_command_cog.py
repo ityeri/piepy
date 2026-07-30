@@ -6,7 +6,7 @@ from pytubefix import YouTube
 from pytubefix.exceptions import RegexMatchError, VideoUnavailable
 from yarl import URL
 
-from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement
+from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement, PlayerController
 from piepy.utils import theme
 from .next_music_select_view import NextMusicSelectView
 from .order_mode_select_view import OrderModeSelectView
@@ -50,8 +50,8 @@ class MusicCommandCog(commands.Cog):
         self.bot: commands.Bot = bot
         self.player_manager: PlayerManager = player_manager
 
-    async def check_user_voice_state(self, ctx: commands.Context, is_first: bool = False) -> bool:
-        player_state = self.player_manager.get_player_state(ctx.guild.id)
+    async def check_user_voice_state(self, ctx: commands.Context, auto_ready: bool = False) -> PlayerController | None:
+        player_controller = self.player_manager.get_player_controller(ctx.guild.id)
 
         if ctx.author.voice is None:
             await ctx.reply(
@@ -61,9 +61,9 @@ class MusicCommandCog(commands.Cog):
                     color=theme.ERROR_COLOR
                 )
             )
-            return False
-        elif player_state is not None:
-            player_voice_channel = player_state.current_channel
+            return None
+        elif player_controller is not None:
+            player_voice_channel = player_controller.current_channel
 
             if ctx.author.voice.channel != player_voice_channel:
                 await ctx.reply(
@@ -73,8 +73,8 @@ class MusicCommandCog(commands.Cog):
                         color=theme.ERROR_COLOR
                     )
                 )
-                return False
-        elif player_state is None and not is_first:
+                return None
+        elif player_controller is None and not auto_ready:
             await ctx.reply(
                 embed=Embed(
                     title='BOT_DISCONNECTED',
@@ -82,9 +82,11 @@ class MusicCommandCog(commands.Cog):
                     color=theme.ERROR_COLOR
                 )
             )
-            return False
+            return None
 
-        return True
+        player_controller = await self.player_manager.ready_player(ctx.guild.id, ctx.author.voice.channel)
+
+        return player_controller
 
 
     class PlayFlags(commands.FlagConverter):
@@ -93,7 +95,7 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='재생', description='영상을 재생하거나 재생목록에 영상을 추가합니다')
     async def play(self, ctx: commands.Context, *, flags: PlayFlags):
-        is_valid_context = await self.check_user_voice_state(ctx, is_first=True)
+        is_valid_context = await self.check_user_voice_state(ctx, auto_ready=True)
         if not is_valid_context:
             return
 
