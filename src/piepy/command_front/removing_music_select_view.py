@@ -74,7 +74,7 @@ class RemovingMusicSelectView(LayoutView):
         elif result == MusicRemovingResult.SKIPPED_AND_REMOVED:
             await response.send_message(
                 embed=Embed(
-                    title='SKIPPED_TO_TARGET',
+                    title='JUMPED_AND_REMOVED',
                     description=f'**{target_music.title}** 영상을 건너뛴 후, 재생목록에서 뺐습니다',
                     color=theme.OK_COLOR
                 )
