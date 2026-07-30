@@ -168,7 +168,7 @@ class OrderManager[T: Hashable]:
             used_elements = None
 
         if self.next_element == element:
-            next_element = self._get_next_element_of(self.current_element)
+            next_element = self._get_next_element_of(self.current_element, used_elements={element})
         else:
             next_element = self.next_element
 
