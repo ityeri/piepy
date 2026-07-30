@@ -21,15 +21,15 @@ def to_natural_timecode(
     mins = time_sec // 60
     time_sec %= 60
 
-    sec = int(time_sec) # TODO add number padding
+    sec = int(time_sec)
 
-    output = str(sec) + sec_suffix
+    output = (str(sec).zfill(2) if (0 < mins or 0 < hour) else str(sec)) + sec_suffix
 
     if 0 < mins:
-        output = str(mins) + min_suffix + sep + output
+        output = (str(int(mins)).zfill(2) if 0 < hour else str(int(mins))) + min_suffix + sep + output
 
     if 0 < hour:
-        output = str(hour) + hour_suffix + sep + output
+        output = str(int(hour)) + hour_suffix + sep + output
 
     return output
 
