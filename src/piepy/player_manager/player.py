@@ -7,7 +7,9 @@ from enum import Enum, auto
 from typing import Callable, Final
 from uuid import UUID
 
-from discord import VoiceChannel, VoiceClient, AudioSource
+import discord
+from discord import VoiceChannel, VoiceClient, AudioSource, Member, VoiceState
+from discord.ext import commands
 
 from .music_element import MusicElement
 from .order_manager import OrderManager
@@ -32,8 +34,16 @@ class MusicInPlayingError(Exception): ...
 class Player:
     """
     """
-    def __init__(self, guild_id: int, on_stop: PlayerStopEvent.Listener, *, session_id: UUID | None = None):
+    def __init__(
+            self,
+            bot: commands.Bot,
+            guild_id: int,
+            on_stop: PlayerStopEvent.Listener,
+            *,
+            session_id: UUID | None = None
+    ):
         self.guild_id: Final[int] = guild_id
+        self.bot: commands.Bot = bot
         self.session_id: Final[UUID] = session_id if session_id is not None else uuid.uuid4()
         self.status: PlayerStatus = PlayerStatus.BEFORE_READY
         self.stop_callback: PlayerStopEvent.Listener = on_stop
@@ -62,6 +72,7 @@ class Player:
             None, None,
             is_loop=is_loop, is_random_order=is_random_order
         )
+        self.bot.add_listener(self.on_voice_state_update, 'on_voice_state_update')
 
         self.status = PlayerStatus.READY
 
@@ -88,6 +99,16 @@ class Player:
     def is_loop(self) -> bool: return self._order_manager.is_loop
     @property
     def is_random_order(self) -> bool: return self._order_manager.is_random_order
+
+    async def on_voice_state_update(self, member: Member, before: VoiceState, after: VoiceState):
+        if (
+                member == self.bot.user
+                and before.channel is not None
+                and after.channel is None
+                and self.status == PlayerStatus.ACTIVE
+        ):
+            await self.stop()
+
 
     def start(self):
         if self.status != PlayerStatus.READY:
@@ -135,8 +156,10 @@ class Player:
 
         await self.stop_callback(PlayerStopEvent(self))
 
+        self.bot.remove_listener(self.on_voice_state_update, 'on_voice_state_update')
         self.voice_client.stop()
-        await self.voice_client.disconnect()
+        if self.voice_client.is_connected():
+            await self.voice_client.disconnect()
 
         self.status = PlayerStatus.DONE
 
