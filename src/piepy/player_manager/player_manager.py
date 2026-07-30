@@ -3,7 +3,7 @@ from typing import Callable, Awaitable
 from discord import VoiceChannel
 from discord.ext import commands
 
-from .player import Player, PlayerStopEvent
+from .player import Player, PlayerStopEvent, PlayerStopReason
 from .player_controller import PlayerController
 
 
@@ -17,7 +17,7 @@ class PlayerManager:
             guild_id: int,
             voice_channel: VoiceChannel,
             *,
-            stop_callback: Callable[[PlayerController], Awaitable] = lambda c: None,
+            stop_callback: Callable[[PlayerController, PlayerStopReason], Awaitable] = lambda c: None,
             is_loop: bool = False,
             is_random_order: bool = False
     ) -> PlayerController | None:
@@ -26,7 +26,7 @@ class PlayerManager:
 
         async def on_player_stop(event: PlayerStopEvent):
             try:
-                await stop_callback(PlayerController(event.player))
+                await stop_callback(PlayerController(event.player), event.reason)
             except Exception:
                 ... # TODO logging
 

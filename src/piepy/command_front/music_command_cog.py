@@ -6,7 +6,7 @@ from yarl import URL
 from yspy.__future__ import VideosSearch
 
 from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement, \
-    PlayerController, PlayerStatus
+    PlayerController, PlayerStatus, PlayerStopReason
 from piepy.utils import theme
 from .next_music_select_view import NextMusicSelectView
 from .order_mode_select_view import OrderModeSelectView
@@ -50,14 +50,15 @@ class MusicCommandCog(commands.Cog):
         self.bot: commands.Bot = bot
         self.player_manager: PlayerManager = player_manager
 
-    async def on_player_stop(self, player_controller: PlayerController):
-        await player_controller.current_channel.send(
-            embed=Embed(
-                title='BYE_BYE',
-                description='모든 영상을 재생했습니다! ㅃ',
-                color=theme.OK_COLOR
+    async def on_player_stop(self, player_controller: PlayerController, reason: PlayerStopReason):
+        if reason.END_OF_PLAY:
+            await player_controller.current_channel.send(
+                embed=Embed(
+                    title='BYE_BYE',
+                    description='모든 영상을 재생했습니다! ㅃ',
+                    color=theme.OK_COLOR
+                )
             )
-        )
 
     async def check_user_voice_state(self, ctx: commands.Context, auto_ready: bool = False) -> PlayerController | None:
         player_controller = self.player_manager.get_player_controller(ctx.guild.id)
