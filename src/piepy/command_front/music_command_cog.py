@@ -6,7 +6,8 @@ from pytubefix import YouTube
 from pytubefix.exceptions import RegexMatchError, VideoUnavailable
 from yarl import URL
 
-from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement, PlayerController
+from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement, \
+    PlayerController, PlayerStatus
 from piepy.utils import theme
 from .next_music_select_view import NextMusicSelectView
 from .order_mode_select_view import OrderModeSelectView
@@ -95,8 +96,8 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='재생', description='영상을 재생하거나 재생목록에 영상을 추가합니다')
     async def play(self, ctx: commands.Context, *, flags: PlayFlags):
-        is_valid_context = await self.check_user_voice_state(ctx, auto_ready=True)
-        if not is_valid_context:
+        player_controller = await self.check_user_voice_state(ctx, auto_ready=True)
+        if not player_controller:
             return
 
         is_youtube_url = True
@@ -143,33 +144,31 @@ class MusicCommandCog(commands.Cog):
             stream_url=audio_stream_url
             )
 
-        music_add_result = await self.player_manager.play_or_add(
-            ctx.guild.id,
-            voice_channel=ctx.author.voice.channel,
-            music_element=music,
-        )
+        music_add_result = await player_controller.add_music(music)
 
-        if music_add_result == MusicAddingResult.CREATED_AND_ADDED:
-            await ctx.reply(
-                embed=Embed(
-                    title='CONNECTED_AND_PLAYED',
-                    description=f'**{music.title}** 영상을 연결 및 재생합니다!',
-                    color=theme.OK_COLOR,
-                    url=music.url
-                ).set_thumbnail(url=music.title_image_url)
-                .set_footer(text=f'검색어: {query}' if query is not None else None)
-            )
+        if music_add_result == MusicAddingResult.ADDED:
+            if player_controller.status != PlayerStatus.ACTIVE:
+                await ctx.reply(
+                    embed=Embed(
+                        title='CONNECTED_AND_PLAYED',
+                        description=f'**{music.title}** 영상을 연결 및 재생합니다!',
+                        color=theme.OK_COLOR,
+                        url=music.url
+                    ).set_thumbnail(url=music.title_image_url)
+                    .set_footer(text=f'검색어: {query}' if query is not None else None)
+                )
+                player_controller.start()
 
-        elif music_add_result == MusicAddingResult.ADDED:
-            await ctx.reply(
-                embed=Embed(
-                    title='ADDED_TO_PLAYLIST',
-                    description=f'**{music.title}** 영상을 재생목록에 추가했습니다',
-                    color=theme.OK_COLOR,
-                    url=music.url
-            ).set_thumbnail(url=music.title_image_url)
-                .set_footer(text=f'검색어: {query}' if query is not None else None)
-            )
+            else:
+                await ctx.reply(
+                    embed=Embed(
+                        title='ADDED_TO_PLAYLIST',
+                        description=f'**{music.title}** 영상을 재생목록에 추가했습니다',
+                        color=theme.OK_COLOR,
+                        url=music.url
+                    ).set_thumbnail(url=music.title_image_url)
+                    .set_footer(text=f'검색어: {query}' if query is not None else None)
+                )
 
         elif music_add_result == MusicAddingResult.DUPLICATED:
             await ctx.reply(
@@ -182,11 +181,11 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='나가', description='재생을 멈추고 통화방을 나갑니다')
     async def stop(self, ctx: commands.Context):
-        is_valid_context = await self.check_user_voice_state(ctx, is_first=True)
-        if not is_valid_context:
+        player_controller = await self.check_user_voice_state(ctx)
+        if not player_controller:
             return
 
-        await self.player_manager.stop(ctx.guild.id)
+        await player_controller.stop()
 
         await ctx.reply(
             embed=Embed(
@@ -198,68 +197,60 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='제거', description='재생목록에서 영상을 하나 제거합니다')
     async def rm(self, ctx: commands.Context):
-        is_valid_context = await self.check_user_voice_state(ctx, is_first=True)
-        if not is_valid_context:
+        player_controller = await self.check_user_voice_state(ctx)
+        if not player_controller:
             return
-
-        player_state = self.player_manager.get_player_state(ctx.guild.id)
 
         await ctx.reply(
             view=RemovingMusicSelectView(
                 '재생목록에서 뺄 영상을 골라 주세요',
                 self.player_manager,
-                player_state.guild_id,
-                player_state.musics
+                player_controller.guild_id,
+                player_controller.musics
             )
         )
 
     @commands.hybrid_command(name='다음', description='다음 영상을 바로 재생하거나 지정한 영상으로 건너뜁니다')
     async def next(self, ctx: commands.Context):
-        is_valid_context = await self.check_user_voice_state(ctx)
-        if not is_valid_context:
+        player_controller = await self.check_user_voice_state(ctx)
+        if not player_controller:
             return
-
-        player_state = self.player_manager.get_player_state(ctx.guild.id)
-        musics = player_state.musics
 
         await ctx.reply(
             view=NextMusicSelectView(
                 '다음 영상으로 건너 뛰거나, 재생할 영상을 골라 주세요',
                 self.player_manager,
-                player_state.guild_id,
-                musics,
+                player_controller.guild_id,
+                player_controller.musics,
             )
         )
 
     @commands.hybrid_command(name='목록', description='현재 재생목록을 확인합니다')
     async def list(self, ctx: commands.Context):
-        is_valid_context = await self.check_user_voice_state(ctx)
-        if not is_valid_context:
+        player_controller = await self.check_user_voice_state(ctx)
+        if not player_controller:
             return
-
-        player_state = self.player_manager.get_player_state(ctx.guild.id)
-        musics = player_state.musics
 
         await ctx.reply(
             view=PlaylistView(
                 '현재 재생목록',
                 self.player_manager,
-                player_state.guild_id,
-                musics,
-                player_state.current_music
+                player_controller.guild_id,
+                player_controller.musics,
+                player_controller.current_music
             )
         )
 
     @commands.hybrid_command(name='순서', description='반복할지, 한번만 재생할지, 무작위로 재생할지 등을 설정합니다')
     async def order(self, ctx: commands.Context):
-        is_valid_context = await self.check_user_voice_state(ctx)
-        if not is_valid_context:
+        player_controller = await self.check_user_voice_state(ctx)
+        if not player_controller:
             return
 
         await ctx.reply(
             view=OrderModeSelectView(
                 '어떤 순서로 영상을 재생할까요?',
                 self.player_manager,
-                ctx.guild.id
+                player_controller.guild_id
             )
         )
