@@ -1,9 +1,11 @@
 import asyncio
+import uuid
 from asyncio import AbstractEventLoop
 from collections.abc import Awaitable
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Callable
+from uuid import UUID
 
 from discord import VoiceChannel, VoiceClient, AudioSource
 
@@ -47,8 +49,9 @@ class MusicInPlayingError(Exception): ...
 class Player:
     """
     """
-    def __init__(self, guild_id: int, on_stop: PlayerStopEvent.LISTENER_TYPE):
+    def __init__(self, guild_id: int, on_stop: PlayerStopEvent.LISTENER_TYPE, *, session_id: UUID | None = None):
         self.guild_id: int = guild_id
+        self.session_id: UUID = session_id if session_id is not None else uuid.uuid4()
         self.status: PlayerStatus = PlayerStatus.BEFORE_READY
         self.on_stop: PlayerStopEvent.LISTENER_TYPE = on_stop
 
