@@ -5,8 +5,9 @@ from uuid import UUID
 
 from discord import VoiceChannel
 
-from . import PlayerStatus, MusicElement, MusicRemovingResult
+from .music_element import MusicElement
 from .player import Player
+from .player import PlayerStatus
 
 
 class _OperationResult(Enum):
