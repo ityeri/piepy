@@ -66,7 +66,7 @@ class RemovingMusicSelectView(LayoutView):
         if result == MusicRemovingResult.REMOVED:
             await response.send_message(
                 embed=Embed(
-                    title='REPLAYED',
+                    title='REMOVED',
                     description=f'**{target_music.title}** 영상을 재생목록에서 뺐습니다',
                     color=theme.OK_COLOR
                 )
