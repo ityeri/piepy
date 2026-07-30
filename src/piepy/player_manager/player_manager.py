@@ -31,7 +31,7 @@ class PlayerManager:
 
         return PlayerController(player)
 
-    async def get_player_controller(self, guild_id: int) -> PlayerController | None:
+    def get_player_controller(self, guild_id: int) -> PlayerController | None:
         if guild_id in self._players:
             return PlayerController(self._players[guild_id])
         else:
