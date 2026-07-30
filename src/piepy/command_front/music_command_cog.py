@@ -140,6 +140,7 @@ class MusicCommandCog(commands.Cog):
                         text='혹시 URL 을 넣었는데 이게 표시됐나요? 비공개 동영상이나 기타 이유로 볼 수 없는 동영상일 수도 있습니다'
                     )
                 )
+                return
 
             yt = YouTube(results[0])
             url = results[0]
@@ -156,7 +157,7 @@ class MusicCommandCog(commands.Cog):
             stream_url=audio_stream_url
             )
 
-        music_add_result = await player_controller.add_music(music)
+        music_add_result = player_controller.add_music(music)
 
         if music_add_result == MusicAddingResult.ADDED:
             if player_controller.status != PlayerStatus.ACTIVE:
