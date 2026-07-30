@@ -120,9 +120,9 @@ class Player:
         current_music = self._order_manager.current_element
 
         if current_music is None:
-            await self.voice_client.channel.send("다틈 ㅃ")
             self._notify_step_waiters()
-            return # TODO Here needs some play end processing
+            await self.stop()
+            return
 
         self._play_wrap(await current_music.create_source())
         self._notify_step_waiters()
