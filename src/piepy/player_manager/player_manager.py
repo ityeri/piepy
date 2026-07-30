@@ -1,3 +1,5 @@
+from typing import Callable, Awaitable
+
 from discord import VoiceChannel
 from discord.ext import commands
 
@@ -10,21 +12,27 @@ class PlayerManager:
         self.bot: commands.Bot = bot
         self._players: dict[int, Player] = dict() # guild id: Player
 
-    async def _on_player_stop(self, player_stop_event: PlayerStopEvent):
-        self._players.pop(player_stop_event.player.guild_id)
-
     async def ready_player(
             self,
             guild_id: int,
             voice_channel: VoiceChannel,
             *,
+            stop_callback: Callable[[PlayerController], Awaitable] = lambda c: None,
             is_loop: bool = False,
             is_random_order: bool = False
     ) -> PlayerController | None:
         if guild_id in self._players:
             return None
 
-        player = Player(guild_id, self._on_player_stop)
+        async def on_player_stop(event: PlayerStopEvent):
+            try:
+                await stop_callback(PlayerController(event.player))
+            except Exception:
+                ... # TODO logging
+
+            self._players.pop(event.player.guild_id)
+
+        player = Player(guild_id, on_player_stop)
         await player.ready(voice_channel, self.bot.loop, is_loop=is_loop, is_random_order=is_random_order)
 
         self._players[guild_id] = player
