@@ -69,7 +69,7 @@ class PlayerController:
     @property
     def is_active(self) -> bool: return self._player.status == PlayerStatus.ACTIVE
 
-    def _validate_state(self) -> StateValidationFailedReason | None:
+    def _validate_status(self) -> StateValidationFailedReason | None:
         if self.status == PlayerStatus.DONE:
             return StateValidationFailedReason.ALREADY_STOPPED
         elif self.status != PlayerStatus.ACTIVE:
@@ -78,9 +78,6 @@ class PlayerController:
             return None
 
     async def add_music(self, music: MusicElement) -> MusicAddingResult | StateValidationFailedReason:
-        if (result := self._validate_state()) is not None:
-            return result
-
         if music in self._player.musics:
             return MusicAddingResult.DUPLICATED
         else:
@@ -88,14 +85,14 @@ class PlayerController:
             return MusicAddingResult.ADDED
 
     async def stop(self) -> StateValidationFailedReason | None:
-        if (result := self._validate_state()) is not None:
+        if (result := self._validate_status()) is not None:
             return result
 
         await self._player.stop()
         return None
 
     async def rm_music(self, music: MusicElement) -> MusicRemovingResult | StateValidationFailedReason:
-        if (result := self._validate_state()) is not None:
+        if (result := self._validate_status()) is not None:
             return result
 
         skipped = False
@@ -114,14 +111,14 @@ class PlayerController:
             return MusicRemovingResult.REMOVED
 
     def jump_to_music(self, music: MusicElement | None) -> StateValidationFailedReason | None:
-        if (result := self._validate_state()) is not None:
+        if (result := self._validate_status()) is not None:
             return result
 
         self._player.jump_to(music)
         return None
 
     def change_order_mode(self, is_loop: bool, is_random_order: bool) -> StateValidationFailedReason | None:
-        if (result := self._validate_state()) is not None:
+        if (result := self._validate_status()) is not None:
             return result
 
         self._player.change_order_mode(is_loop, is_random_order)
