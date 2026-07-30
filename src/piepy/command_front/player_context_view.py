@@ -13,7 +13,7 @@ class PlayerContextView(ABC, LayoutView):
         super().__init__(timeout=timeout)
         self.controller: PlayerController = player_controller
 
-    async def validate_player_context(self, interaction: discord.Interaction, command_name: str) -> bool:
+    async def validate_player_context(self, interaction: discord.Interaction, hint_command_name: str) -> bool:
         response: InteractionResponse = interaction.response
 
         if self.controller.status == PlayerStatus.ACTIVE:
@@ -24,7 +24,7 @@ class PlayerContextView(ABC, LayoutView):
                     title='BOT_DISCONNECTED',
                     description='뮤직봇을 사용중이지 않거나 사용하신 임베드가 너무 오래전에 생겼습니다',
                     color=theme.ERROR_COLOR
-                ).set_footer(text=f'/재생 명령어를 쓰거나 {command_name} 명령어로 새 임베드를 띄워보세요')
+                ).set_footer(text=f'/재생 명령어를 쓰거나 {hint_command_name} 명령어로 새 임베드를 띄워보세요')
             )
             return False
 
@@ -32,7 +32,7 @@ class PlayerContextView(ABC, LayoutView):
             self,
             interaction: discord.Interaction,
             music_id: str,
-            command_name: str
+            hint_command_name: str
     ) -> MusicElement | None:
         response: InteractionResponse = interaction.response
 
@@ -44,6 +44,6 @@ class PlayerContextView(ABC, LayoutView):
                     title='MUSIC_NOT_FOUND',
                     description=f'해당 영상은 현재 재생목록에 없습니다!',
                     color=theme.ERROR_COLOR
-                ).set_footer(text=f'{command_name} 명령어로 이 UI를 다시 띄워보세요')
+                ).set_footer(text=f'{hint_command_name} 명령어로 이 UI를 다시 띄워보세요')
             )
             return None
