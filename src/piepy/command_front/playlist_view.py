@@ -1,9 +1,9 @@
 import discord
-from discord import InteractionResponse
 from discord import Embed
+from discord import InteractionResponse
 from discord.ui import LayoutView, Container, Section, TextDisplay, Button
 
-from piepy.player_manager import MusicElement, PlayerManager
+from piepy.player_manager import MusicElement, PlayerController, PlayerStatus
 from piepy.utils import theme
 
 
@@ -32,28 +32,23 @@ def to_natural_timecode(
 
     return output
 
+
 class PlaylistView(LayoutView):
     def __init__(
             self,
             title: str,
-            player_manager: PlayerManager,
-            guild_id: int,
-            musics: list[MusicElement],
-            current_music: MusicElement
+            player_controller: PlayerController
     ):
         super().__init__(timeout=None)
 
-        self.player_manager: PlayerManager = player_manager
-        self.guild_id: int = guild_id
-        self.musics: list[MusicElement] = musics
-        self.current_music: MusicElement = current_music
+        self.controller: PlayerController = player_controller
 
         self.add_item(
             Container(
                 TextDisplay(f'## {title}'),
                 *[
                     self.create_music_section(music)
-                    for music in self.musics
+                    for music in self.controller.musics
                 ],
                 accent_color=theme.OK_COLOR
             )
@@ -65,23 +60,34 @@ class PlaylistView(LayoutView):
 
         return Section(
             TextDisplay(
-                f'### [__*{music.title}*__]({music.url})' if music == self.current_music
+                f'### [__*{music.title}*__]({music.url})' if music == self.controller.current_music
                 else f'### [{music.title}]({music.url})'
             ),
             TextDisplay(
                 f'길이: **{to_natural_timecode(music.length)}**  **·**  **현재 재생중!**'
-                if music == self.current_music
+                if music == self.controller.current_music
                 else f'길이: **{to_natural_timecode(music.length)}**'
             ),
             accessory=button,
         )
 
     async def play_button(self, interaction: discord.Interaction):
-        target_music: MusicElement = next(filter(lambda m: m.id == interaction.data['custom_id'], self.musics))
-        player_state = self.player_manager.get_player_state(self.guild_id)
         response: InteractionResponse = interaction.response
 
-        if target_music not in player_state.musics:
+        if self.controller.status != PlayerStatus.ACTIVE:
+            await response.send_message(
+                embed=Embed(
+                    title='BOT_DISCONNECTED',
+                    description='뮤직봇을 사용중이지 않거나 사용하신 임베드가 너무 오래전에 생겼습니다',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text='/재생 명령어를 쓰거나 /목록 명령어로 새 재생목록을 띄워보세요')
+            )
+            return
+
+        music_id = interaction.data['custom_id']
+        target_music: MusicElement = next(filter(lambda m: m.id == music_id, self.controller.musics))
+
+        if target_music not in self.controller.musics:
             await response.send_message(
                 embed=Embed(
                     title='MUSIC_NOT_FOUND',
@@ -91,21 +97,9 @@ class PlaylistView(LayoutView):
             )
             return
 
-        is_success = self.player_manager.jump_to_music(self.guild_id, target_music)
+        self.controller.jump_to_music(target_music)
 
-        if not is_success:
-            await response.send_message(
-                embed=Embed(
-                    title='BOT_DISCONNECTED',
-                    description='뮤직봇 기능을 사용중이지 않습니다! `/재생` 명령어를 써보세요',
-                    color=theme.ERROR_COLOR
-                )
-            )
-            return
-
-        player_state = self.player_manager.get_player_state(self.guild_id)
-
-        if target_music == player_state.current_music:
+        if target_music == self.controller.current_music:
             await response.send_message(
                 embed=Embed(
                     title='REPLAYED',

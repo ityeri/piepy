@@ -4,7 +4,7 @@ import discord
 from discord import InteractionResponse, Embed
 from discord.ui import LayoutView, Select, Container, TextDisplay, ActionRow
 
-from piepy.player_manager import PlayerManager
+from piepy.player_manager import PlayerController, StateValidationFailedReason
 from piepy.utils import theme
 
 
@@ -41,13 +41,11 @@ class OrderModeSelectView(LayoutView):
     def __init__(
             self,
             title: str,
-            player_manager: PlayerManager,
-            guild_id: int,
+            player_controller: PlayerController
     ):
         super().__init__(timeout=60)
 
-        self.player_manager: PlayerManager = player_manager
-        self.guild_id: int = guild_id
+        self.controller: PlayerController = player_controller
 
         select = Select(
             placeholder='순서 방식을 선택해 주세요',
@@ -69,24 +67,25 @@ class OrderModeSelectView(LayoutView):
         )
 
     async def on_select(self, interaction: discord.Interaction):
-        value = interaction.data['values'][0]
-        mode: OrderMode = next(filter(lambda m: m.name == value, OrderMode))
-        is_success = self.player_manager.change_order_mode(self.guild_id, mode.is_loop, mode.is_random_order)
+        music_id = interaction.data['values'][0]
+        mode: OrderMode = next(filter(lambda m: m.name == music_id, OrderMode))
+        result = self.controller.change_order_mode(mode.is_loop, mode.is_random_order)
+
         response: InteractionResponse = interaction.response
 
-        if is_success:
+        if result == StateValidationFailedReason.ALREADY_STOPPED:
+            await response.send_message(
+                embed=Embed(
+                    title='BOT_DISCONNECTED',
+                    description='뮤직봇을 사용중이지 않거나 사용하신 임베드가 너무 오래전에 생겼습니다',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text='/재생 명령어를 쓰거나 /순서 명령어로 새 임베드를 띄워보세요')
+            )
+        else:
             await response.send_message(
                 embed=Embed(
                     title='ORDER_MODE_CHANGED',
                     description='순서 방식이 변경되었습니다',
                     color=theme.OK_COLOR
-                )
-            )
-        else:
-            await response.send_message(
-                embed=Embed(
-                    title='BOT_DISCONNECTED',
-                    description='뮤직봇 기능을 사용중이지 않습니다! `/재생` 명령어를 써보세요',
-                    color=theme.ERROR_COLOR
                 )
             )

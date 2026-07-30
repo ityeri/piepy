@@ -202,12 +202,7 @@ class MusicCommandCog(commands.Cog):
             return
 
         await ctx.reply(
-            view=RemovingMusicSelectView(
-                '재생목록에서 뺄 영상을 골라 주세요',
-                self.player_manager,
-                player_controller.guild_id,
-                player_controller.musics
-            )
+            view=RemovingMusicSelectView('재생목록에서 뺄 영상을 골라 주세요', player_controller)
         )
 
     @commands.hybrid_command(name='다음', description='다음 영상을 바로 재생하거나 지정한 영상으로 건너뜁니다')
@@ -217,12 +212,7 @@ class MusicCommandCog(commands.Cog):
             return
 
         await ctx.reply(
-            view=NextMusicSelectView(
-                '다음 영상으로 건너 뛰거나, 재생할 영상을 골라 주세요',
-                self.player_manager,
-                player_controller.guild_id,
-                player_controller.musics,
-            )
+            view=NextMusicSelectView('다음 영상으로 건너 뛰거나, 재생할 영상을 골라 주세요', player_controller)
         )
 
     @commands.hybrid_command(name='목록', description='현재 재생목록을 확인합니다')
@@ -232,13 +222,7 @@ class MusicCommandCog(commands.Cog):
             return
 
         await ctx.reply(
-            view=PlaylistView(
-                '현재 재생목록',
-                self.player_manager,
-                player_controller.guild_id,
-                player_controller.musics,
-                player_controller.current_music
-            )
+            view=PlaylistView('현재 재생목록', player_controller)
         )
 
     @commands.hybrid_command(name='순서', description='반복할지, 한번만 재생할지, 무작위로 재생할지 등을 설정합니다')
@@ -248,9 +232,5 @@ class MusicCommandCog(commands.Cog):
             return
 
         await ctx.reply(
-            view=OrderModeSelectView(
-                '어떤 순서로 영상을 재생할까요?',
-                self.player_manager,
-                player_controller.guild_id
-            )
+            view=OrderModeSelectView('어떤 순서로 영상을 재생할까요?', player_controller)
         )
