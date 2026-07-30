@@ -22,9 +22,16 @@ class PlayerStatus(Enum):
     STOPPING = auto()
     DONE = auto()
 
+class PlayerStopReason(Enum):
+    BY_USER = auto()
+    BY_SYSTEM = auto()
+    END_OF_PLAY = auto()
+    DISCONNECTED = auto()
+
 @dataclass(frozen=True)
 class PlayerStopEvent:
     player: Player
+    reason: PlayerStopReason
 
     type Listener = Callable[[PlayerStopEvent], Awaitable]
 
@@ -100,6 +107,7 @@ class Player:
     @property
     def is_random_order(self) -> bool: return self._order_manager.is_random_order
 
+
     async def on_voice_state_update(self, member: Member, before: VoiceState, after: VoiceState):
         if (
                 member == self.bot.user
@@ -107,7 +115,7 @@ class Player:
                 and after.channel is None
                 and self.status == PlayerStatus.ACTIVE
         ):
-            await self.stop()
+            await self._stop(PlayerStopReason.DISCONNECTED)
 
 
     def start(self):
@@ -142,19 +150,26 @@ class Player:
 
         if current_music is None:
             self._notify_step_waiters()
-            await self.stop()
+            await self._stop(PlayerStopReason.END_OF_PLAY)
             return
 
         self._play_wrap(await current_music.create_source())
         self._notify_step_waiters()
 
-    async def stop(self):
+
+    async def stop(self, is_by_user: bool = False):
         if self.status != PlayerStatus.ACTIVE:
             raise RuntimeError('Cannot stop. Player status is not ACTIVE')
 
+        await self._stop(PlayerStopReason.BY_USER if is_by_user else PlayerStopReason.BY_SYSTEM)
+
+    async def _stop(self, reason: PlayerStopReason):
         self.status = PlayerStatus.STOPPING
 
-        await self.stop_callback(PlayerStopEvent(self))
+        await self.stop_callback(PlayerStopEvent(
+            player=self,
+            reason=reason
+        ))
 
         self.bot.remove_listener(self.on_voice_state_update, 'on_voice_state_update')
         self.voice_client.stop()
