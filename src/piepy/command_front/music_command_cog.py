@@ -51,7 +51,7 @@ class MusicCommandCog(commands.Cog):
         self.player_manager: PlayerManager = player_manager
 
     async def on_player_stop(self, player_controller: PlayerController, reason: PlayerStopReason):
-        if reason.END_OF_PLAY:
+        if reason == PlayerStopReason.END_OF_PLAY:
             await player_controller.current_channel.send(
                 embed=Embed(
                     title='BYE_BYE',
