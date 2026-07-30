@@ -50,6 +50,15 @@ class MusicCommandCog(commands.Cog):
         self.bot: commands.Bot = bot
         self.player_manager: PlayerManager = player_manager
 
+    async def on_player_stop(self, player_controller: PlayerController):
+        await player_controller.current_channel.send(
+            embed=Embed(
+                title='BYE_BYE',
+                description='모든 영상을 재생했습니다! ㅃ',
+                color=theme.OK_COLOR
+            )
+        )
+
     async def check_user_voice_state(self, ctx: commands.Context, auto_ready: bool = False) -> PlayerController | None:
         player_controller = self.player_manager.get_player_controller(ctx.guild.id)
 
@@ -86,7 +95,9 @@ class MusicCommandCog(commands.Cog):
             )
             return None
 
-        created_controller = await self.player_manager.ready_player(ctx.guild.id, ctx.author.voice.channel)
+        created_controller = await self.player_manager.ready_player(
+            ctx.guild.id, ctx.author.voice.channel, stop_callback=self.on_player_stop
+        )
 
         return created_controller
 
