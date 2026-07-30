@@ -77,6 +77,13 @@ class PlayerController:
         else:
             return None
 
+    def start(self) -> bool:
+        try:
+            self._player.start()
+            return True
+        except RuntimeError:
+            return False
+
     async def add_music(self, music: MusicElement) -> MusicAddingResult | StateValidationFailedReason:
         if music in self._player.musics:
             return MusicAddingResult.DUPLICATED
