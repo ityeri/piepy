@@ -1,15 +1,15 @@
 from .music_element import MusicElement, UrlStreamMusicElement
-from .player import Player, PlayerState, PlayerStatus
-from .player_manager import PlayerManager, MusicAddingResult, MusicRemovingResult
+from .player import PlayerStatus
+from .player_manager import PlayerManager
+from .player_controller import PlayerController, StateValidationFailedReason, MusicRemovingResult
 
 __all__ = [
     'PlayerManager',
-    'MusicAddingResult',
-    'MusicRemovingResult',
+    'PlayerController',
 
-    'Player',
+    'StateValidationFailedReason',
+    'MusicRemovingResult',
     'PlayerStatus',
-    'PlayerState',
 
     'MusicElement',
     'UrlStreamMusicElement'
