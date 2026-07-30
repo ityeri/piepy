@@ -1,28 +1,21 @@
 import discord
 from discord import InteractionResponse, Embed
-from discord.ui import LayoutView, Container, Select, TextDisplay, ActionRow
+from discord.ui import Container, Select, TextDisplay, ActionRow
 
-from piepy.player_manager import MusicElement, MusicRemovingResult, PlayerController, PlayerStatus
+from piepy.player_manager import MusicRemovingResult, PlayerController
 from piepy.utils import theme
+from .player_context_view import PlayerContextView
 
 
-class RemovingMusicSelectView(LayoutView):
-    def __init__(
-            self,
-            title: str,
-            player_controller: PlayerController
-    ):
-        super().__init__(timeout=60)
-
-        self.controller: PlayerController = player_controller
+class RemovingMusicSelectView(PlayerContextView):
+    def __init__(self, title: str, player_controller: PlayerController):
+        super().__init__(player_controller, timeout=60)
 
         select = Select(
             placeholder='지울 영상을 선택해 주세요',
             options=[
-                *[
-                    discord.SelectOption(label=music.title, value=music.id)
-                    for music in self.controller.musics
-                ],
+                discord.SelectOption(label=music.title, value=music.id)
+                for music in self.controller.musics
             ],
         )
         select.callback = self.on_select
@@ -38,27 +31,12 @@ class RemovingMusicSelectView(LayoutView):
     async def on_select(self, interaction: discord.Interaction):
         response: InteractionResponse = interaction.response
 
-        if self.controller.status != PlayerStatus.ACTIVE:
-            await response.send_message(
-                embed=Embed(
-                    title='BOT_DISCONNECTED',
-                    description='뮤직봇을 사용중이지 않거나 사용하신 임베드가 너무 오래전에 생겼습니다',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text='/재생 명령어를 쓰거나 /제거 명령어로 새 임베드를 띄워보세요')
-            )
+        if not await self.validate_player_context(interaction, '/제거'):
             return
 
         music_id = interaction.data['values'][0]
-        target_music: MusicElement = next(filter(lambda m: m.id == music_id, self.controller.musics))
-
-        if target_music not in self.controller.musics:
-            await response.send_message(
-                embed=Embed(
-                    title='MUSIC_NOT_FOUND',
-                    description=f'해당 영상은 현재 재생목록에 없습니다!',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text='/제거 명령어로 이 UI를 다시 띄워보세요')
-            )
+        target_music = await self.get_music_by_id(interaction, music_id, '/제거')
+        if target_music is None:
             return
 
         result = await self.controller.rm_music(target_music)

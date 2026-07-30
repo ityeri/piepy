@@ -1,10 +1,11 @@
 import discord
 from discord import Embed
 from discord import InteractionResponse
-from discord.ui import LayoutView, Container, Section, TextDisplay, Button
+from discord.ui import Container, Section, TextDisplay, Button
 
-from piepy.player_manager import MusicElement, PlayerController, PlayerStatus
+from piepy.player_manager import MusicElement, PlayerController
 from piepy.utils import theme
+from .player_context_view import PlayerContextView
 
 
 def to_natural_timecode(
@@ -20,7 +21,7 @@ def to_natural_timecode(
     mins = time_sec // 60
     time_sec %= 60
 
-    sec = int(time_sec)
+    sec = int(time_sec) # TODO add number padding
 
     output = str(sec) + sec_suffix
 
@@ -33,15 +34,9 @@ def to_natural_timecode(
     return output
 
 
-class PlaylistView(LayoutView):
-    def __init__(
-            self,
-            title: str,
-            player_controller: PlayerController
-    ):
-        super().__init__(timeout=None)
-
-        self.controller: PlayerController = player_controller
+class PlaylistView(PlayerContextView):
+    def __init__(self, title: str, player_controller: PlayerController):
+        super().__init__(player_controller, timeout=None)
 
         self.add_item(
             Container(
@@ -74,27 +69,12 @@ class PlaylistView(LayoutView):
     async def play_button(self, interaction: discord.Interaction):
         response: InteractionResponse = interaction.response
 
-        if self.controller.status != PlayerStatus.ACTIVE:
-            await response.send_message(
-                embed=Embed(
-                    title='BOT_DISCONNECTED',
-                    description='뮤직봇을 사용중이지 않거나 사용하신 임베드가 너무 오래전에 생겼습니다',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text='/재생 명령어를 쓰거나 /목록 명령어로 새 재생목록을 띄워보세요')
-            )
+        if not await self.validate_player_context(interaction, '/목록'):
             return
 
         music_id = interaction.data['custom_id']
-        target_music: MusicElement = next(filter(lambda m: m.id == music_id, self.controller.musics))
-
-        if target_music not in self.controller.musics:
-            await response.send_message(
-                embed=Embed(
-                    title='MUSIC_NOT_FOUND',
-                    description=f'해당 영상은 현재 재생목록에 없습니다!',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text='/목록 명령어로 새 최신 재생목록을 띄워 보세요')
-            )
+        target_music = await self.get_music_by_id(interaction, music_id, '/목록')
+        if target_music is None:
             return
 
         self.controller.jump_to_music(target_music)
