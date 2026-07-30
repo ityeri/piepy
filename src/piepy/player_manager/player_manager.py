@@ -32,7 +32,7 @@ class PlayerManager:
 
             self._players.pop(event.player.guild_id)
 
-        player = Player(guild_id, on_player_stop)
+        player = Player(self.bot, guild_id, on_player_stop)
         await player.ready(voice_channel, self.bot.loop, is_loop=is_loop, is_random_order=is_random_order)
 
         self._players[guild_id] = player
