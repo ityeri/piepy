@@ -84,7 +84,7 @@ class PlayerController:
         except RuntimeError:
             return False
 
-    def add_music(self, music: MusicElement) -> MusicAddingResult | StateValidationFailedReason:
+    def add_music(self, music: MusicElement) -> MusicAddingResult:
         if music in self._player.musics:
             return MusicAddingResult.DUPLICATED
         else:
