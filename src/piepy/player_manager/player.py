@@ -20,40 +20,23 @@ class PlayerStatus(Enum):
     STOPPING = auto()
     DONE = auto()
 
-@dataclass(frozen=False)
-class PlayerState:
-    guild_id: int
-    status: PlayerStatus
-    musics: list[MusicElement]
-
-    current_music: MusicElement | None
-    next_music: MusicElement | None
-
-    is_loop: bool
-    is_random_order: bool
-
-    current_channel: VoiceChannel | None
-
-
 @dataclass(frozen=True)
 class PlayerStopEvent:
     player: Player
 
-    type LISTENER_TYPE = Callable[[PlayerStopEvent], Awaitable]
-
+    type Listener = Callable[[PlayerStopEvent], Awaitable]
 
 class MusicInPlayingError(Exception): ...
 
 
-#
 class Player:
     """
     """
-    def __init__(self, guild_id: int, on_stop: PlayerStopEvent.LISTENER_TYPE, *, session_id: UUID | None = None):
+    def __init__(self, guild_id: int, on_stop: PlayerStopEvent.Listener, *, session_id: UUID | None = None):
         self.guild_id: Final[int] = guild_id
         self.session_id: Final[UUID] = session_id if session_id is not None else uuid.uuid4()
         self.status: PlayerStatus = PlayerStatus.BEFORE_READY
-        self.on_stop: PlayerStopEvent.LISTENER_TYPE = on_stop
+        self.on_stop: PlayerStopEvent.Listener = on_stop
 
         self.voice_client: VoiceClient | None = None
         self.running_loop: AbstractEventLoop | None = None
@@ -187,18 +170,3 @@ class Player:
         future: asyncio.Future[None] = self.running_loop.create_future()
         self._step_waiters.append(future)
         return future
-
-    def to_player_state(self) -> PlayerState:
-        return PlayerState(
-            guild_id=self.guild_id,
-            status=self.status,
-            musics=list(self.musics),
-
-            current_music=self.current_music,
-            next_music=self.next_music,
-
-            is_loop=self.is_loop,
-            is_random_order=self.is_random_order,
-
-            current_channel=self.voice_client.channel
-        )
