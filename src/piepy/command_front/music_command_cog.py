@@ -1,3 +1,5 @@
+from enum import Enum, auto
+
 from discord import Embed
 from discord.ext import commands
 from pytubefix import YouTube, Stream
@@ -45,6 +47,11 @@ def ensure_scheme(url_str: str, scheme: str = 'https') -> URL:
         url = URL(f"{scheme}://{url_str}")
     return url
 
+class UserVoiceAvailability(Enum):
+    UNAVAILABLE = auto()
+    CREATABLE = auto()
+    MOVABLE = auto()
+
 
 class MusicCommandCog(commands.Cog):
     def __init__(self, bot: commands.Bot, player_manager: PlayerManager):
@@ -77,7 +84,9 @@ class MusicCommandCog(commands.Cog):
                 )
             )
 
-    async def check_user_voice_state(self, ctx: commands.Context, is_first: bool = False) -> PlayerController | None:
+    async def check_user_voice_state(
+            self, ctx: commands.Context, is_first: bool = False
+    ) -> PlayerController | UserVoiceAvailability:
         user_channel = ctx.author.voice.channel if ctx.author.voice is not None else None
         player_controller = self.player_manager.get_player_controller(ctx.guild.id)
 
@@ -89,7 +98,7 @@ class MusicCommandCog(commands.Cog):
                     color=theme.ERROR_COLOR
                 )
             )
-            return None
+            return UserVoiceAvailability.UNAVAILABLE
 
         if player_controller is None:
             if not is_first:
@@ -100,10 +109,8 @@ class MusicCommandCog(commands.Cog):
                         color=theme.ERROR_COLOR
                     )
                 )
-                return None
-            return await self.player_manager.ready_player(
-                ctx.guild.id, user_channel, stop_callback=self.on_player_stop
-            )
+                return UserVoiceAvailability.UNAVAILABLE
+            return UserVoiceAvailability.CREATABLE
 
         player_channel = player_controller.current_channel
 
@@ -111,8 +118,7 @@ class MusicCommandCog(commands.Cog):
             return player_controller
 
         if is_first and not any(not m.bot for m in player_channel.members):
-            await player_controller.move_to(user_channel)
-            return player_controller
+            return UserVoiceAvailability.MOVABLE
 
         await ctx.reply(
             embed=Embed(
@@ -121,7 +127,7 @@ class MusicCommandCog(commands.Cog):
                 color=theme.ERROR_COLOR
             )
         )
-        return None
+        return UserVoiceAvailability.UNAVAILABLE
 
 
     class PlayFlags(commands.FlagConverter):
@@ -130,8 +136,8 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='재생', description='영상을 재생하거나 재생목록에 영상을 추가합니다')
     async def play(self, ctx: commands.Context, *, flags: PlayFlags):
-        player_controller = await self.check_user_voice_state(ctx, is_first=True)
-        if player_controller is None:
+        availability = await self.check_user_voice_state(ctx, is_first=True)
+        if availability == UserVoiceAvailability.UNAVAILABLE:
             return
 
         await ctx.defer()
@@ -225,6 +231,16 @@ class MusicCommandCog(commands.Cog):
 
         audio_stream_url = stream_fetching_result.url
 
+        if availability == UserVoiceAvailability.CREATABLE:
+            player_controller = await self.player_manager.ready_player(
+                ctx.guild.id, ctx.author.voice.channel, stop_callback=self.on_player_stop
+            )
+        elif availability == UserVoiceAvailability.MOVABLE:
+            player_controller = self.player_manager.get_player_controller(ctx.guild.id)
+            await player_controller.move_to(ctx.author.voice.channel)
+        else:
+            player_controller = availability
+
         music = UrlStreamMusicElement(
             f'yt_video_{yt.video_id}',
             title=yt.title,
@@ -250,6 +266,11 @@ class MusicCommandCog(commands.Cog):
                 player_controller.start()
 
             else:
+                footer_text = f'검색어: {query}' if query is not None else None
+
+                if availability == UserVoiceAvailability.MOVABLE:
+                    footer_text += '\n  **·**  원래 봇이 있던곳이 비어 있어 자동으로 이동했습니다!'
+
                 await ctx.reply(
                     embed=Embed(
                         title='ADDED_TO_PLAYLIST',
@@ -257,7 +278,7 @@ class MusicCommandCog(commands.Cog):
                         color=theme.OK_COLOR,
                         url=music.url
                     ).set_thumbnail(url=music.title_image_url)
-                    .set_footer(text=f'검색어: {query}' if query is not None else None)
+                    .set_footer(text=footer_text)
                 )
 
         elif music_add_result == MusicAddingResult.DUPLICATED:
@@ -271,9 +292,10 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='나가', description='재생을 멈추고 통화방을 나갑니다')
     async def stop(self, ctx: commands.Context):
-        player_controller = await self.check_user_voice_state(ctx)
-        if player_controller is None:
+        result = await self.check_user_voice_state(ctx)
+        if not isinstance(result, PlayerController):
             return
+        player_controller = result
 
         result = await player_controller.stop()
 
@@ -304,9 +326,10 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='제거', description='재생목록에서 영상을 하나 제거합니다')
     async def rm(self, ctx: commands.Context):
-        player_controller = await self.check_user_voice_state(ctx)
-        if player_controller is None:
+        result = await self.check_user_voice_state(ctx)
+        if not isinstance(result, PlayerController):
             return
+        player_controller = result
 
         await ctx.reply(
             view=RemovingMusicSelectView('재생목록에서 뺄 영상을 골라 주세요', player_controller)
@@ -314,9 +337,10 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='다음', description='다음 영상을 바로 재생하거나 지정한 영상으로 건너뜁니다')
     async def next(self, ctx: commands.Context):
-        player_controller = await self.check_user_voice_state(ctx)
-        if player_controller is None:
+        result = await self.check_user_voice_state(ctx)
+        if not isinstance(result, PlayerController):
             return
+        player_controller = result
 
         await ctx.reply(
             view=NextMusicSelectView('다음 영상으로 건너 뛰거나, 재생할 영상을 골라 주세요', player_controller)
@@ -324,9 +348,10 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='목록', description='현재 재생목록을 확인합니다')
     async def list(self, ctx: commands.Context):
-        player_controller = await self.check_user_voice_state(ctx)
-        if player_controller is None:
+        result = await self.check_user_voice_state(ctx)
+        if not isinstance(result, PlayerController):
             return
+        player_controller = result
 
         await ctx.reply(
             view=PlaylistView('현재 재생목록', player_controller)
@@ -334,9 +359,10 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='순서', description='반복할지, 한번만 재생할지, 무작위로 재생할지 등을 설정합니다')
     async def order(self, ctx: commands.Context):
-        player_controller = await self.check_user_voice_state(ctx)
-        if player_controller is None:
+        result = await self.check_user_voice_state(ctx)
+        if not isinstance(result, PlayerController):
             return
+        player_controller = result
 
         await ctx.reply(
             view=OrderModeSelectView('어떤 순서로 영상을 재생할까요?', player_controller)
