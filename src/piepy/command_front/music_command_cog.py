@@ -1,9 +1,7 @@
-from sysconfig import expand_makefile_vars
-
 from discord import Embed
 from discord.ext import commands
 from pytubefix import YouTube, Stream
-from pytubefix.exceptions import RegexMatchError, VideoUnavailable, BotDetection
+from pytubefix.exceptions import RegexMatchError, VideoUnavailable
 from yarl import URL
 from yspy.__future__ import VideosSearch
 
@@ -14,6 +12,7 @@ from .next_music_select_view import NextMusicSelectView
 from .order_mode_select_view import OrderModeSelectView
 from .playlist_view import PlaylistView
 from .removing_music_select_view import RemovingMusicSelectView
+from .youtube_stream_fetcher import get_highest_resolution_audio_stream, StreamFetchingResult
 
 
 async def get_urls_by_query(query: str, limit: int) -> list[str]:
@@ -170,27 +169,61 @@ class MusicCommandCog(commands.Cog):
             yt = YouTube(results[0])
             url = results[0]
 
+        stream_fetching_result = get_highest_resolution_audio_stream(url)
 
-        fetched = False
-        stream: Stream | None = None
+        if stream_fetching_result == StreamFetchingResult.VIDEO_PRIVATE:
+            await ctx.reply(
+                embed=Embed(
+                    title='VIDEO_PRIVATE',
+                    description='비공개 영상이거나 멤버십 전용 영상입니다!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+        elif stream_fetching_result == StreamFetchingResult.VIDEO_REMOVED:
+            await ctx.reply(
+                embed=Embed(
+                    title='VIDEO_REMOVED',
+                    description='삭제된 영상입니다!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+        elif stream_fetching_result == StreamFetchingResult.VIDEO_BLOCKED:
+            await ctx.reply(
+                embed=Embed(
+                    title='VIDEO_BLOCKED',
+                    description='저작권 또는 지역 제한으로 재생할 수 없는 영상입니다!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+        elif stream_fetching_result == StreamFetchingResult.UNAVAILABLE_LIVE:
+            await ctx.reply(
+                embed=Embed(
+                    title='UNAVAILABLE_LIVE',
+                    description='라이브 방송은 재생할 수 없습니다!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+        elif stream_fetching_result == StreamFetchingResult.BOT_DETECTION:
+            await ctx.reply(
+                embed=Embed(
+                    title='BOT_DETECTION',
+                    description='영상을 가져오던중, YouTube에 의해 봇으로 감지되었습니다. 잠시 후 다시 시도해 주세요!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+        elif stream_fetching_result == StreamFetchingResult.UNKNOWN:
+            await ctx.reply(
+                embed=Embed(
+                    title='VIDEO_UNAVAILABLE',
+                    description='알 수 없는 이유로 영상에 접근할 수 없습니다!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
 
-        while not fetched:
-            # TODO This could be make some infinity circle... but I don't know. anyway it works well
-            try:
-                stream = max(yt.streams.filter(only_audio=True), key=lambda s: int(s.abr[:-4]) if s.abr else 0)
-                fetched = True
-            except BotDetection: pass
-            except VideoUnavailable:
-                await ctx.reply(
-                    embed=Embed(
-                        title='VIDEO_UNAVAILABLE',
-                        description=f'해당 영상은 비공개 동영상이거나 접근할수 없습니다!',
-                        color=theme.ERROR_COLOR
-                    ).set_footer(text=f'검색어: {query}' if query is not None else None)
-                )
-                return
+        if not isinstance(stream_fetching_result, Stream):
+            return
 
-        audio_stream_url = stream.url
+        audio_stream_url = stream_fetching_result.url
 
         music = UrlStreamMusicElement(
             f'yt_video_{yt.video_id}',
