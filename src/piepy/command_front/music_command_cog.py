@@ -217,10 +217,13 @@ class MusicCommandCog(commands.Cog):
                 player_controller.start()
 
             else:
-                footer_text = f'검색어: {query}' if query is not None else None
-
+                footer_text = f'검색어: {query}' if query is not None else ''
                 if availability == UserVoiceAvailability.MOVABLE:
-                    footer_text += '\n  **·**  원래 봇이 있던곳이 비어 있어 자동으로 이동했습니다!'
+                    footer_text += '\n  **·**  ' .join(
+                        [footer_text, '원래 봇이 있던곳이 비어 있어 자동으로 이동했습니다!']
+                    )
+                if not footer_text:
+                    footer_text = None
 
                 await ctx.reply(
                     embed=Embed(
