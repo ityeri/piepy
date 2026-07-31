@@ -244,11 +244,12 @@ class MusicCommandCog(commands.Cog):
     async def fetch_youtube(self, ctx: commands.Context, url: str, query: str | None) -> YouTube | None:
         result = fetch_youtube(url)
 
+        # TODO most of this if statements are never be reached. read the youtube_fetcher.py
         if result == YouTubeFetchingResult.VIDEO_PRIVATE:
             await ctx.reply(
                 embed=Embed(
                     title='VIDEO_PRIVATE',
-                    description='비공개 영상이거나 멤버십 전용 영상입니다!',
+                    description='비공개 영상이거나, 멤버십 전용 영상이거나, 연령 제한이 존재하는 영상입니다!',
                     color=theme.ERROR_COLOR
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
@@ -272,7 +273,7 @@ class MusicCommandCog(commands.Cog):
             await ctx.reply(
                 embed=Embed(
                     title='UNAVAILABLE_LIVE',
-                    description='라이브 방송은 재생할 수 없습니다!',
+                    description='라이브 방송은 다시보기가 아니라면 재생할 수 없습니다!',
                     color=theme.ERROR_COLOR
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
@@ -288,7 +289,8 @@ class MusicCommandCog(commands.Cog):
             await ctx.reply(
                 embed=Embed(
                     title='VIDEO_UNAVAILABLE',
-                    description='알 수 없는 이유로 영상에 접근할 수 없습니다!',
+                    description='알 수 없는 이유로 영상에 접근할 수 없습니다!'
+                                '영상 비공개, 맴버십 전용이나 연령 제한 등등이 원인일수 있습니다',
                     color=theme.ERROR_COLOR
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
