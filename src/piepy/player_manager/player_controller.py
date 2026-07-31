@@ -130,3 +130,6 @@ class PlayerController:
 
         self._player.change_order_mode(is_loop, is_random_order)
         return None
+
+    async def move_to(self, channel: VoiceChannel):
+        await self._player.move_to(channel)

@@ -202,6 +202,9 @@ class Player:
             .change_order_mode(is_loop, is_random_order)\
             .update_next_element()
 
+    async def move_to(self, channel: VoiceChannel):
+        await self.voice_client.move_to(channel)
+
     def subscribe_next_step(self) -> asyncio.Future[None]:
         future: asyncio.Future[None] = self.running_loop.create_future()
         self._step_waiters.append(future)
