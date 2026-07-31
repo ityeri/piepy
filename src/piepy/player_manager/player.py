@@ -157,7 +157,7 @@ class Player:
         self._notify_step_waiters()
 
 
-    async def stop(self, is_by_user: bool = False):
+    async def stop(self):
         if self.status != PlayerStatus.ACTIVE:
             raise RuntimeError('Cannot stop. Player status is not ACTIVE')
 
