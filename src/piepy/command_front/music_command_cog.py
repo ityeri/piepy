@@ -1,3 +1,5 @@
+from sysconfig import expand_makefile_vars
+
 from discord import Embed
 from discord.ext import commands
 from pytubefix import YouTube, Stream
@@ -57,6 +59,22 @@ class MusicCommandCog(commands.Cog):
                     title='BYE_BYE',
                     description='모든 영상을 재생했습니다! ㅃ',
                     color=theme.OK_COLOR
+                )
+            )
+        elif reason == PlayerStopReason.DISCONNECTED:
+            await player_controller.current_channel.send(
+                embed=Embed(
+                    title='DISCONNECTED',
+                    description='통화방과의 연결이 끊겼습니다',
+                    color=theme.OK_COLOR
+                )
+            )
+        elif reason == PlayerStopReason.SOURCE_CREATION_FAILED:
+            await player_controller.current_channel.send(
+                embed=Embed(
+                    title='SOURCE_CREATION_FAILED',
+                    description='다음으로 재생할 음악을 준비하던 중, 알 수 없는 문제가 발생했습니다!',
+                    color=theme.ERROR_COLOR
                 )
             )
 
