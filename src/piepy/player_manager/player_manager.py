@@ -44,3 +44,6 @@ class PlayerManager:
             return PlayerController(self._players[guild_id])
         else:
             return None
+
+    def get_all_player_controller(self) -> dict[int, PlayerController]:
+        return {id: PlayerController(player) for id, player in self._players.items()}
