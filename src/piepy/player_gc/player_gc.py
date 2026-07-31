@@ -17,7 +17,7 @@ class PlayerGc:
         while True:
             for controller in self.player_manager.get_all_player_controller().values():
                 if controller.current_channel is not None and controller.is_active:
-                    active_users = filter(lambda m: m.bot, controller.current_channel.members)
+                    active_users = list(filter(lambda m: not m.bot, controller.current_channel.members))
 
                     if not active_users:
                         await controller.stop()
