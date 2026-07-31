@@ -38,15 +38,22 @@ class OrderManager[T: Hashable]:
             is_random_order=is_random_order
         )
 
-    def _get_next_element_of(self, current_element: T | None, used_elements: set[T] | None = None) -> T | None:
+    def _get_next_element_of(
+            self,
+            current_element: T | None,
+            elements: list[T] | None = None,
+            used_elements: set[T] | None = None
+    ) -> T | None:
+        elements = elements if elements is not None else self.elements
+
         if self.is_random_order:
             effective_used = used_elements if used_elements is not None else self.used_elements
-            available = set(self.elements) - (effective_used | {current_element})
+            available = set(elements) - (effective_used | {current_element})
 
             if available:
                 return random.choice(list(available))
             elif self.is_loop:
-                return random.choice(self.elements)
+                return random.choice(elements)
             else:
                 return None
 
@@ -54,15 +61,15 @@ class OrderManager[T: Hashable]:
             if current_element is None:
                 next_index = 0
             else:
-                next_index = self.elements.index(current_element) + 1
+                next_index = elements.index(current_element) + 1
 
-            if len(self.elements) <= next_index:
+            if len(elements) <= next_index:
                 if self.is_loop:
-                    return self.elements[0]
+                    return elements[0]
                 else:
                     return None
             else:
-                return self.elements[next_index]
+                return elements[next_index]
 
     def step(self) -> OrderManager[T]:
         if self.is_random_order:
@@ -71,10 +78,10 @@ class OrderManager[T: Hashable]:
 
             if not set(self.elements) - tentative_used and self.is_loop:
                 new_used = set()
-                next_element = self._get_next_element_of(None, new_used)
+                next_element = self._get_next_element_of(None, used_elements=new_used)
             else:
                 new_used = tentative_used
-                next_element = self._get_next_element_of(self.next_element, new_used)
+                next_element = self._get_next_element_of(self.next_element, used_elements=new_used)
         else:
             new_used = None
             next_element = self._get_next_element_of(self.next_element, new_used)
@@ -162,18 +169,24 @@ class OrderManager[T: Hashable]:
         if element == self.current_element:
             raise ValueError('Given element is same as current_element')
 
+        new_elements = [e for e in self.elements if e != element]
+
         if self.used_elements is not None:
             used_elements = self.used_elements - {element}
         else:
             used_elements = None
 
         if self.next_element == element:
-            next_element = self._get_next_element_of(self.current_element, used_elements={element})
+            next_element = self._get_next_element_of(
+                self.current_element,
+                elements=new_elements,
+                used_elements={used_elements}
+            )
         else:
             next_element = self.next_element
 
         return OrderManager(
-            elements=[e for e in self.elements if e != element],
+            elements=new_elements,
             current_element=self.current_element,
             next_element=next_element,
             used_elements=used_elements,
