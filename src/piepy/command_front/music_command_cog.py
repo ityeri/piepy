@@ -2,8 +2,8 @@ from enum import Enum, auto
 
 from discord import Embed
 from discord.ext import commands
-from pytubefix import YouTube, Stream
-from pytubefix.exceptions import RegexMatchError, VideoUnavailable
+from pytubefix import YouTube, extract
+from pytubefix.exceptions import RegexMatchError
 from yarl import URL
 from yspy.__future__ import VideosSearch
 
@@ -14,7 +14,7 @@ from .next_music_select_view import NextMusicSelectView
 from .order_mode_select_view import OrderModeSelectView
 from .playlist_view import PlaylistView
 from .removing_music_select_view import RemovingMusicSelectView
-from .youtube_stream_fetcher import get_highest_resolution_audio_stream, StreamFetchingResult
+from .youtube_fetcher import YouTubeFetchingResult, fetch_youtube
 
 
 async def get_urls_by_query(query: str, limit: int) -> list[str]:
@@ -142,20 +142,17 @@ class MusicCommandCog(commands.Cog):
 
         await ctx.defer()
 
-        is_youtube_url = True
-        yt = None
-
+        # step1. is the url_or_query url?
         try:
-            yt = YouTube(flags.url_or_query)
+            extract.video_id(flags.url_or_query)
+            is_youtube_url = True
         except RegexMatchError:
             is_youtube_url = False
-        except VideoUnavailable:
-            is_youtube_url = False
 
+        # step2. get query, url from url_or_query
         if is_youtube_url:
-            url = flags.url_or_query
             query = None
-
+            url = flags.url_or_query
         else:
             query = flags.url_or_query
             results = await get_urls_by_query(query, limit=1)
@@ -172,65 +169,27 @@ class MusicCommandCog(commands.Cog):
                 )
                 return
 
-            yt = YouTube(results[0])
             url = results[0]
 
-        stream_fetching_result = get_highest_resolution_audio_stream(url)
-
-        if stream_fetching_result == StreamFetchingResult.VIDEO_PRIVATE:
-            await ctx.reply(
-                embed=Embed(
-                    title='VIDEO_PRIVATE',
-                    description='비공개 영상이거나 멤버십 전용 영상입니다!',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text=f'검색어: {query}' if query is not None else None)
-            )
-        elif stream_fetching_result == StreamFetchingResult.VIDEO_REMOVED:
-            await ctx.reply(
-                embed=Embed(
-                    title='VIDEO_REMOVED',
-                    description='삭제된 영상입니다!',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text=f'검색어: {query}' if query is not None else None)
-            )
-        elif stream_fetching_result == StreamFetchingResult.VIDEO_BLOCKED:
-            await ctx.reply(
-                embed=Embed(
-                    title='VIDEO_BLOCKED',
-                    description='저작권 또는 지역 제한으로 재생할 수 없는 영상입니다!',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text=f'검색어: {query}' if query is not None else None)
-            )
-        elif stream_fetching_result == StreamFetchingResult.UNAVAILABLE_LIVE:
-            await ctx.reply(
-                embed=Embed(
-                    title='UNAVAILABLE_LIVE',
-                    description='라이브 방송은 재생할 수 없습니다!',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text=f'검색어: {query}' if query is not None else None)
-            )
-        elif stream_fetching_result == StreamFetchingResult.BOT_DETECTION:
-            await ctx.reply(
-                embed=Embed(
-                    title='BOT_DETECTION',
-                    description='영상을 가져오던중, YouTube에 의해 봇으로 감지되었습니다. 잠시 후 다시 시도해 주세요!',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text=f'검색어: {query}' if query is not None else None)
-            )
-        elif stream_fetching_result == StreamFetchingResult.UNKNOWN:
-            await ctx.reply(
-                embed=Embed(
-                    title='VIDEO_UNAVAILABLE',
-                    description='알 수 없는 이유로 영상에 접근할 수 없습니다!',
-                    color=theme.ERROR_COLOR
-                ).set_footer(text=f'검색어: {query}' if query is not None else None)
-            )
-
-        if not isinstance(stream_fetching_result, Stream):
+        # step3. get the YouTube object and validate
+        yt = await self.fetch_youtube(ctx, url, query)
+        if yt is None:
             return
 
-        audio_stream_url = stream_fetching_result.url
+        # step4. get the final stream url and create a MusicElement
+        stream = max(yt.streams.filter(only_audio=True), key=lambda s: int(s.abr[:-4]) if s.abr else 0)
+        audio_stream_url = stream.url
 
+        music = UrlStreamMusicElement(
+            f'yt_video_{yt.video_id}',
+            title=yt.title,
+            url=str(ensure_scheme(url)),
+            title_image_url=yt.thumbnail_url,
+            length=yt.length,
+            stream_url=audio_stream_url
+        )
+
+        # step5. if necessary, ready or move a player
         if availability == UserVoiceAvailability.CREATABLE:
             player_controller = await self.player_manager.ready_player(
                 ctx.guild.id, ctx.author.voice.channel, stop_callback=self.on_player_stop
@@ -241,15 +200,7 @@ class MusicCommandCog(commands.Cog):
         else:
             player_controller = availability
 
-        music = UrlStreamMusicElement(
-            f'yt_video_{yt.video_id}',
-            title=yt.title,
-            url=str(ensure_scheme(url)),
-            title_image_url=yt.thumbnail_url,
-            length=yt.length,
-            stream_url=audio_stream_url
-            )
-
+        # final adding and response
         music_add_result = player_controller.add_music(music)
 
         if music_add_result == MusicAddingResult.ADDED:
@@ -289,6 +240,64 @@ class MusicCommandCog(commands.Cog):
                     color=theme.ERROR_COLOR
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
+
+    async def fetch_youtube(self, ctx: commands.Context, url: str, query: str | None) -> YouTube | None:
+        result = fetch_youtube(url)
+
+        if result == YouTubeFetchingResult.VIDEO_PRIVATE:
+            await ctx.reply(
+                embed=Embed(
+                    title='VIDEO_PRIVATE',
+                    description='비공개 영상이거나 멤버십 전용 영상입니다!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+        elif result == YouTubeFetchingResult.VIDEO_REMOVED:
+            await ctx.reply(
+                embed=Embed(
+                    title='VIDEO_REMOVED',
+                    description='삭제된 영상입니다!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+        elif result == YouTubeFetchingResult.VIDEO_BLOCKED:
+            await ctx.reply(
+                embed=Embed(
+                    title='VIDEO_BLOCKED',
+                    description='저작권 또는 지역 제한으로 재생할 수 없는 영상입니다!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+        elif result == YouTubeFetchingResult.UNAVAILABLE_LIVE:
+            await ctx.reply(
+                embed=Embed(
+                    title='UNAVAILABLE_LIVE',
+                    description='라이브 방송은 재생할 수 없습니다!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+        elif result == YouTubeFetchingResult.BOT_DETECTION:
+            await ctx.reply(
+                embed=Embed(
+                    title='BOT_DETECTION',
+                    description='영상을 가져오던중 YouTube에 의해 봇으로 감지되었습니다. 잠시 후 다시 시도해 주세요!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+        elif result == YouTubeFetchingResult.UNKNOWN:
+            await ctx.reply(
+                embed=Embed(
+                    title='VIDEO_UNAVAILABLE',
+                    description='알 수 없는 이유로 영상에 접근할 수 없습니다!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+
+        if isinstance(result, YouTube):
+            return result
+        else:
+            return None
+
 
     @commands.hybrid_command(name='나가', description='재생을 멈추고 통화방을 나갑니다')
     async def stop(self, ctx: commands.Context):
