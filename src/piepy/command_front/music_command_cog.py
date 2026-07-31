@@ -1,7 +1,7 @@
 from discord import Embed
 from discord.ext import commands
-from pytubefix import YouTube
-from pytubefix.exceptions import RegexMatchError, VideoUnavailable
+from pytubefix import YouTube, Stream
+from pytubefix.exceptions import RegexMatchError, VideoUnavailable, BotDetection
 from yarl import URL
 from yspy.__future__ import VideosSearch
 
@@ -137,17 +137,19 @@ class MusicCommandCog(commands.Cog):
         if player_controller is None:
             return
 
+        await ctx.defer()
+
         is_youtube_url = True
+        yt = None
 
         try:
-            YouTube(flags.url_or_query)
+            yt = YouTube(flags.url_or_query)
         except RegexMatchError:
             is_youtube_url = False
         except VideoUnavailable:
             is_youtube_url = False
 
         if is_youtube_url:
-            yt = YouTube(flags.url_or_query)
             url = flags.url_or_query
             query = None
 
@@ -162,7 +164,7 @@ class MusicCommandCog(commands.Cog):
                         description=f'주어진 검색어 "{query}" 에 대한 유튜브 검색 결과가 없습니다!',
                         color=theme.ERROR_COLOR
                     ).set_footer(
-                        text='혹시 URL 을 넣었는데 이게 표시됐나요? 비공개 동영상이나 기타 이유로 볼 수 없는 동영상일 수도 있습니다'
+                        text='혹시 URL을 넣었는데 이게 표시됐나요? URL을 다시 한번 확인해 주세요'
                     )
                 )
                 return
@@ -170,7 +172,26 @@ class MusicCommandCog(commands.Cog):
             yt = YouTube(results[0])
             url = results[0]
 
-        stream = max(yt.streams.filter(only_audio=True), key=lambda s: int(s.abr[:-4]) if s.abr else 0)
+
+        fetched = False
+        stream: Stream | None = None
+
+        while not fetched:
+            # TODO This could be make some infinity circle... but I don't know. anyway it works well
+            try:
+                stream = max(yt.streams.filter(only_audio=True), key=lambda s: int(s.abr[:-4]) if s.abr else 0)
+                fetched = True
+            except BotDetection: pass
+            except VideoUnavailable:
+                await ctx.reply(
+                    embed=Embed(
+                        title='VIDEO_UNAVAILABLE',
+                        description=f'해당 영상은 비공개 동영상이거나 접근할수 없습니다!',
+                        color=theme.ERROR_COLOR
+                    ).set_footer(text=f'검색어: {query}' if query is not None else None)
+                )
+                return
+
         audio_stream_url = stream.url
 
         music = UrlStreamMusicElement(
