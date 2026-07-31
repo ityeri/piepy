@@ -61,70 +61,50 @@ class MusicCommandCog(commands.Cog):
             )
 
     async def check_user_voice_state(self, ctx: commands.Context, is_first: bool = False) -> PlayerController | None:
-        player_controller = self.player_manager.get_player_controller(ctx.guild.id)
         user_channel = ctx.author.voice.channel if ctx.author.voice is not None else None
+        player_controller = self.player_manager.get_player_controller(ctx.guild.id)
 
-        if user_channel is None and player_controller is None:
+        if user_channel is None:
             await ctx.reply(
                 embed=Embed(
                     title='NOT_CONNECTED',
-                    description=f'이 기능을 사용하기 위해선 먼저 이 서버의 아무 통화방에 접속해 주세요!',
-                    color=theme.ERROR_COLOR
-                )
-            )
-
-        if is_first:
-            if player_controller is None and user_channel is not None: # bot X, user O
-                created_controller = await self.player_manager.ready_player(
-                    ctx.guild.id, user_channel, stop_callback=self.on_player_stop
-                )
-                return created_controller
-
-            elif player_controller is not None and user_channel is not None: # bot O, user O
-                player_channel = player_controller.current_channel
-
-                if player_channel == user_channel:
-                    return player_controller
-                else:
-                    non_bot_members = list(filter(lambda m: not m.bot, player_channel.members))
-
-                    if non_bot_members:
-                        await ctx.reply(
-                            embed=Embed(
-                                title='CHANNEL_MISMATCH',
-                                description=
-                                    f'이 명령어를 사용하기 위해선 먼저 {player_channel.mention} 통화방에 접속해 주세요!',
-                                color=theme.ERROR_COLOR
-                            )
-                        )
-                        return None
-                    else:
-                        await player_controller.move_to(user_channel)
-                        return player_controller
-
-        if player_controller is None:
-            await ctx.reply(
-                embed=Embed(
-                    title='BOT_DISCONNECTED',
-                    description='뮤직봇 기능을 사용중이지 않습니다! /재생 명령어를 써보세요',
+                    description='이 기능을 사용하기 위해선 먼저 이 서버의 아무 통화방에 접속해 주세요!',
                     color=theme.ERROR_COLOR
                 )
             )
             return None
-        else:
-            player_channel = player_controller.current_channel
 
-            if user_channel == player_channel:
-                return player_controller
-            else:
+        if player_controller is None:
+            if not is_first:
                 await ctx.reply(
                     embed=Embed(
-                        title='CHANNEL_MISMATCH',
-                        description=f'이 명령어를 사용하기 위해선 먼저 {player_channel.mention} 통화방에 접속해 주세요!',
+                        title='BOT_DISCONNECTED',
+                        description='뮤직봇 기능을 사용중이지 않습니다! /재생 명령어를 써보세요',
                         color=theme.ERROR_COLOR
                     )
                 )
                 return None
+            return await self.player_manager.ready_player(
+                ctx.guild.id, user_channel, stop_callback=self.on_player_stop
+            )
+
+        player_channel = player_controller.current_channel
+
+        if user_channel == player_channel:
+            return player_controller
+
+        if is_first and not any(not m.bot for m in player_channel.members):
+            await player_controller.move_to(user_channel)
+            return player_controller
+
+        await ctx.reply(
+            embed=Embed(
+                title='CHANNEL_MISMATCH',
+                description=f'이 명령어를 사용하기 위해선 먼저 {player_channel.mention} 통화방에 접속해 주세요!',
+                color=theme.ERROR_COLOR
+            )
+        )
+        return None
 
 
     class PlayFlags(commands.FlagConverter):
