@@ -60,33 +60,49 @@ class MusicCommandCog(commands.Cog):
                 )
             )
 
-    async def check_user_voice_state(self, ctx: commands.Context, auto_ready: bool = False) -> PlayerController | None:
+    async def check_user_voice_state(self, ctx: commands.Context, is_first: bool = False) -> PlayerController | None:
         player_controller = self.player_manager.get_player_controller(ctx.guild.id)
+        user_channel = ctx.author.voice.channel if ctx.author.voice is not None else None
 
-        if ctx.author.voice is None:
+        if user_channel is None and player_controller is None:
             await ctx.reply(
                 embed=Embed(
                     title='NOT_CONNECTED',
-                    description=f'이 명령어를 사용하기 위해선 먼저 이 서버의 아무 통화방에 접속해 주세요!',
+                    description=f'이 기능을 사용하기 위해선 먼저 이 서버의 아무 통화방에 접속해 주세요!',
                     color=theme.ERROR_COLOR
                 )
             )
-            return None
-        elif player_controller is not None:
-            player_voice_channel = player_controller.current_channel
 
-            if ctx.author.voice.channel != player_voice_channel:
-                await ctx.reply(
-                    embed=Embed(
-                        title='CHANNEL_MISMATCH',
-                        description=f'이 명령어를 사용하기 위해선 먼저 {player_voice_channel.mention} 통화방에 접속해 주세요!',
-                        color=theme.ERROR_COLOR
-                    )
+        if is_first:
+            if player_controller is None and user_channel is not None: # bot X, user O
+                created_controller = await self.player_manager.ready_player(
+                    ctx.guild.id, user_channel, stop_callback=self.on_player_stop
                 )
-                return None
-            else:
-                return player_controller
-        elif player_controller is None and not auto_ready:
+                return created_controller
+
+            elif player_controller is not None and user_channel is not None: # bot O, user O
+                player_channel = player_controller.current_channel
+
+                if player_channel == user_channel:
+                    return player_controller
+                else:
+                    non_bot_members = list(filter(lambda m: not m.bot, player_channel.members))
+
+                    if non_bot_members:
+                        await ctx.reply(
+                            embed=Embed(
+                                title='CHANNEL_MISMATCH',
+                                description=
+                                    f'이 명령어를 사용하기 위해선 먼저 {player_channel.mention} 통화방에 접속해 주세요!',
+                                color=theme.ERROR_COLOR
+                            )
+                        )
+                        return None
+                    else:
+                        await player_controller.move_to(user_channel)
+                        return player_controller
+
+        if player_controller is None:
             await ctx.reply(
                 embed=Embed(
                     title='BOT_DISCONNECTED',
@@ -95,12 +111,20 @@ class MusicCommandCog(commands.Cog):
                 )
             )
             return None
+        else:
+            player_channel = player_controller.current_channel
 
-        created_controller = await self.player_manager.ready_player(
-            ctx.guild.id, ctx.author.voice.channel, stop_callback=self.on_player_stop
-        )
-
-        return created_controller
+            if user_channel == player_channel:
+                return player_controller
+            else:
+                await ctx.reply(
+                    embed=Embed(
+                        title='CHANNEL_MISMATCH',
+                        description=f'이 명령어를 사용하기 위해선 먼저 {player_channel.mention} 통화방에 접속해 주세요!',
+                        color=theme.ERROR_COLOR
+                    )
+                )
+                return None
 
 
     class PlayFlags(commands.FlagConverter):
@@ -109,7 +133,7 @@ class MusicCommandCog(commands.Cog):
 
     @commands.hybrid_command(name='재생', description='영상을 재생하거나 재생목록에 영상을 추가합니다')
     async def play(self, ctx: commands.Context, *, flags: PlayFlags):
-        player_controller = await self.check_user_voice_state(ctx, auto_ready=True)
+        player_controller = await self.check_user_voice_state(ctx, is_first=True)
         if player_controller is None:
             return
 
