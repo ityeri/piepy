@@ -25,6 +25,7 @@ class PlayerStopReason(Enum):
     EXTERNAL_REQUEST = auto()
     END_OF_PLAY = auto()
     DISCONNECTED = auto()
+    SOURCE_CREATION_FAILED = auto()
 
 @dataclass(frozen=True)
 class PlayerStopEvent:
@@ -151,7 +152,13 @@ class Player:
             await self._stop(PlayerStopReason.END_OF_PLAY)
             return
 
-        self._play_wrap(await current_music.create_source())
+        try:
+            audio_source = await current_music.create_source()
+        except Exception as e:
+            await self._stop(PlayerStopReason.SOURCE_CREATION_FAILED)
+            return
+
+        self._play_wrap(audio_source)
         self._notify_step_waiters()
 
 
