@@ -13,7 +13,5 @@ new
 
 쓰담쓰담 gif 제너레이터
 
-player garbage collecting for every step or times
-heuristic channel changing when using /play command
-logging
+message embed creation abstracting
 panel feature (after merge, in other branch)
