@@ -1,7 +1,10 @@
 import asyncio
+import logging
 from asyncio import AbstractEventLoop, Task
 
 from piepy.player_manager import PlayerManager
+
+_logger = logging.getLogger(__name__)
 
 
 class PlayerGc:
@@ -20,6 +23,9 @@ class PlayerGc:
                     active_users = list(filter(lambda m: not m.bot, controller.current_channel.members))
 
                     if not active_users:
+                        _logger.info(
+                            f'Stopping idle player in guild={controller.guild_id} channel={controller.current_channel.name}'
+                        )
                         await controller.stop()
 
             await asyncio.sleep(self.interval)

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import uuid
 from asyncio import AbstractEventLoop
 from collections.abc import Awaitable
@@ -12,6 +13,8 @@ from discord.ext import commands
 
 from .music_element import MusicElement
 from .order_manager import OrderManager
+
+_logger = logging.getLogger(__name__)
 
 
 class PlayerStatus(Enum):
@@ -154,7 +157,11 @@ class Player:
 
         try:
             audio_source = await current_music.create_source()
-        except Exception as e:
+        except Exception:
+            _logger.error(
+                f'Failed to create audio source: guild={self.guild_id} music_id={current_music.id}',
+                exc_info=True
+            )
             await self._stop(PlayerStopReason.SOURCE_CREATION_FAILED)
             return
 
@@ -170,6 +177,7 @@ class Player:
 
     async def _stop(self, reason: PlayerStopReason):
         self.status = PlayerStatus.STOPPING
+        _logger.info(f'Player stopping: guild={self.guild_id} reason={reason.name}')
 
         await self.stop_callback(PlayerStopEvent(
             player=self,

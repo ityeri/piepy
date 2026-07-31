@@ -1,7 +1,10 @@
+import logging
 from enum import Enum, auto
 
 from pytubefix import YouTube
 from pytubefix.exceptions import *
+
+_logger = logging.getLogger(__name__)
 
 
 class YouTubeFetchingResult(Enum):
@@ -19,8 +22,11 @@ def fetch_youtube(url: str, max_attempts: int = 10) -> YouTube | YouTubeFetching
         try:
             yt = YouTube(url)
             yt.check_availability()
+            _logger.debug(f'YouTube fetch succeeded: url={url}')
             return yt
-        except BotDetection: pass
+        except BotDetection:
+            tries += 1
+            _logger.warning(f'BotDetection on attempt {tries}/{max_attempts}: url={url}')
 
         # TODO this giant exception logic does not working
         # pytubefix lib raises errors by checking a UI message and this message is depends on the locale
@@ -47,6 +53,5 @@ def fetch_youtube(url: str, max_attempts: int = 10) -> YouTube | YouTubeFetching
 
         except VideoUnavailable: return YouTubeFetchingResult.UNKNOWN
 
-        tries += 1
-
+    _logger.warning(f'BotDetection: exhausted {max_attempts} attempts for url={url}')
     return YouTubeFetchingResult.BOT_DETECTION
