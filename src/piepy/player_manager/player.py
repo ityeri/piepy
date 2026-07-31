@@ -7,7 +7,6 @@ from enum import Enum, auto
 from typing import Callable, Final
 from uuid import UUID
 
-import discord
 from discord import VoiceChannel, VoiceClient, AudioSource, Member, VoiceState
 from discord.ext import commands
 
@@ -23,8 +22,7 @@ class PlayerStatus(Enum):
     DONE = auto()
 
 class PlayerStopReason(Enum):
-    BY_USER = auto()
-    BY_SYSTEM = auto()
+    EXTERNAL_REQUEST = auto()
     END_OF_PLAY = auto()
     DISCONNECTED = auto()
 
@@ -161,7 +159,7 @@ class Player:
         if self.status != PlayerStatus.ACTIVE:
             raise RuntimeError('Cannot stop. Player status is not ACTIVE')
 
-        await self._stop(PlayerStopReason.BY_USER if is_by_user else PlayerStopReason.BY_SYSTEM)
+        await self._stop(PlayerStopReason.EXTERNAL_REQUEST)
 
     async def _stop(self, reason: PlayerStopReason):
         self.status = PlayerStatus.STOPPING
