@@ -5,6 +5,7 @@ from discord.ext import commands
 
 from piepy import config
 from piepy.command_front.music_command_cog import MusicCommandCog
+from piepy.player_gc import PlayerGc
 from piepy.player_manager import PlayerManager
 
 
@@ -17,6 +18,9 @@ class RootContainer(containers.DeclarativeContainer):
 
     player_manager: Singleton[PlayerManager] = \
         Singleton(PlayerManager, bot=bot)
+
+    player_gc: Singleton[PlayerGc] = \
+        Singleton(PlayerGc, player_manager=player_manager, interval=60.0)
 
     music_command_cog: Singleton[MusicCommandCog] = \
         Singleton(MusicCommandCog, bot=bot, player_manager=player_manager)
