@@ -3,6 +3,7 @@ from piepy.bootstrap import Bootstrapper
 from piepy.root_container import RootContainer
 
 from piepy import player_manager
+from piepy import player_gc
 from piepy import command_front
 
 
@@ -19,6 +20,7 @@ __all__ = [
     'config',
 
     'player_manager',
+    'player_gc',
     'command_front',
 
     'main'
