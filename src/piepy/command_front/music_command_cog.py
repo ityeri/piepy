@@ -8,7 +8,7 @@ from yarl import URL
 from yspy.__future__ import VideosSearch
 
 from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement, \
-    PlayerController, PlayerStatus, PlayerStopReason
+    PlayerController, PlayerStatus, PlayerStopReason, StateValidationFailedReason
 from piepy.utils import theme
 from .next_music_select_view import NextMusicSelectView
 from .order_mode_select_view import OrderModeSelectView
@@ -242,15 +242,32 @@ class MusicCommandCog(commands.Cog):
         if player_controller is None:
             return
 
-        await player_controller.stop()
+        result = await player_controller.stop()
 
-        await ctx.reply(
-            embed=Embed(
-                title='BYE_BYE',
-                description='재생을 멈추고 통화방을 나갑니다',
-                color=theme.OK_COLOR
+        if result == StateValidationFailedReason.NOT_YET_ACTIVE:
+            await ctx.reply(
+                embed=Embed(
+                    title='NOT_YET_ACTIVE',
+                    description='아직 뮤직봇 기능이 시작되지 않았습니다!',
+                    color=theme.ERROR_COLOR
+                )
             )
-        )
+        elif result == StateValidationFailedReason.ALREADY_STOPPED:
+            await ctx.reply(
+                embed=Embed(
+                    title='ALREADY_STOPPED',
+                    description='이미 뮤직봇 기능이 종료됬습니다!',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text='이 희귀한 메세지를 보시다니.. 도대체 뮤직봇을 어떻게 쓰신거죠')
+            )
+        else:
+            await ctx.reply(
+                embed=Embed(
+                    title='BYE_BYE',
+                    description='재생을 멈추고 통화방을 나갑니다',
+                    color=theme.OK_COLOR
+                )
+            )
 
     @commands.hybrid_command(name='제거', description='재생목록에서 영상을 하나 제거합니다')
     async def rm(self, ctx: commands.Context):
