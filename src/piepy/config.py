@@ -7,11 +7,13 @@ from dotenv import load_dotenv
 @dataclass
 class Config:
     bot_token: str
+    log_file_path: str | None
 
 
 def get_config_from_env() -> Config:
     load_dotenv()
 
     return Config(
-        os.getenv('BOT_TOKEN')
+        os.getenv('BOT_TOKEN'),
+        os.getenv('LOG_FILE')
     )
