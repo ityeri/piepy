@@ -1,11 +1,10 @@
-from piepy import listener
-from piepy import async_listener
-from piepy import utils
-from piepy import music
-
-from piepy.root_container import RootContainer
-from piepy.bootstrap import Bootstrapper
 from piepy import config
+from piepy.bootstrap import Bootstrapper
+from piepy.root_container import RootContainer
+
+from piepy import player_manager
+from piepy import player_gc
+from piepy import command_front
 
 
 def main():
@@ -16,14 +15,13 @@ def main():
 
 
 __all__ = [
-    'listener',
-    'async_listener',
-    'utils',
-    'music',
-
     'RootContainer',
     'Bootstrapper',
     'config',
+
+    'player_manager',
+    'player_gc',
+    'command_front',
 
     'main'
 ]
