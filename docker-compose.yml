@@ -1,8 +1,8 @@
 services:
   app:
     build: .
-    image: piepyimage
-    container_name: piepyapp
+    image: piepy-image
+    container_name: piepy-app
     tty: true
 
     environment:

@@ -1,14 +1,15 @@
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
-RUN apt update
-RUN apt install -y ffmpeg
-RUN apt install -y git && rm -rf /var/lib/apt/lists/*
-RUN pip install --no-cache-dir poetry
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir uv
 
 COPY . ./
-RUN poetry build
-RUN pip install --no-cache-dir dist/*.whl
+RUN uv build && uv pip install --system dist/*.whl
 
 CMD ["python", "-m", "piepy"]
