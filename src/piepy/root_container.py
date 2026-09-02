@@ -24,7 +24,7 @@ class RootContainer(containers.DeclarativeContainer):
         Singleton(PlayerGc, player_manager=player_manager, interval=60.0)
 
     youtube_music_provider: Singleton[YouTubeMusicElementProvider] = \
-        Singleton(YouTubeMusicElementProvider, download_dir='./downloads')  # TODO hardcoded
+        Singleton(YouTubeMusicElementProvider, download_dir=config.provided.download_dir)
 
     music_command_cog: Singleton[MusicCommandCog] = \
         Singleton(
