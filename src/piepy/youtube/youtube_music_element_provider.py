@@ -29,7 +29,9 @@ class YouTubeMusicElementProvider:  # 지금 무료체험 하세요
                     'quiet': True,
                     'no_warnings': True,
                     'outtmpl': file_path,
-                    'format': 'bestaudio/best'
+                    'format': 'bestaudio/best',
+                    "js_runtimes": {"node": {}},
+                    "remote_components": ["ejs:github"]
                 }
                 with YoutubeDL(config) as ydl:
                     ydl.extract_info(video_url, download=True)
