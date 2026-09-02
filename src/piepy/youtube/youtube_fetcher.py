@@ -1,3 +1,4 @@
+import logging
 from enum import Enum, auto
 
 from pytubefix import YouTube
@@ -13,6 +14,7 @@ class YouTubeFetchingResult(Enum):
     UNAVAILABLE_LIVE = auto()
     BOT_DETECTION = auto()
     UNKNOWN = auto()
+
 
 def fetch_youtube(url: str, max_attempts: int = 10) -> YouTube | YouTubeFetchingResult:
     tries = 0
