@@ -22,6 +22,7 @@ dependencies = [
     "dependency-injector>=4.49.1",
     "reger>=0.1.3",
     "pynacl>=1.6.2",
+    "yt-dlp>=2026.8.19",
 ]
 
 [project.urls]
