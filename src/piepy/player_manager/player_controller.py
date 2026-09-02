@@ -19,13 +19,16 @@ class _OperationResult(Enum):
     def __init__(self, value, is_success: bool):
         self.is_success = is_success
 
+
 class StateValidationFailedReason(_OperationResult):
     NOT_YET_ACTIVE = (auto(), False)
     ALREADY_STOPPED = (auto(), False)
 
+
 class MusicAddingResult(_OperationResult):
     ADDED = (auto(), True)
     DUPLICATED = (auto(), False)
+
 
 class MusicRemovingResult(_OperationResult):
     REMOVED = (auto(), True)
@@ -36,6 +39,7 @@ class PlayerController:
     """
     This class can be creatable only in the player_manager package domain
     """
+
     def __init__(self, player: Player):
         if player.status == PlayerStatus.BEFORE_READY:
             raise RuntimeError('Could not create PlayerController. Player status should not be a BEFORE_READY')
@@ -45,19 +49,28 @@ class PlayerController:
         self.guild_id: Final[int] = self._player.guild_id
 
     @property
-    def status(self) -> PlayerStatus: return self._player.status
-    @property
-    def musics(self) -> list[MusicElement]: return self._player.musics
+    def status(self) -> PlayerStatus:
+        return self._player.status
 
     @property
-    def current_music(self) -> MusicElement | None: return self._player.current_music
-    @property
-    def next_music(self) -> MusicElement | None: return self._player.next_music
+    def musics(self) -> list[MusicElement]:
+        return self._player.musics
 
     @property
-    def is_loop(self) -> bool: return self._player.is_loop
+    def current_music(self) -> MusicElement | None:
+        return self._player.current_music
+
     @property
-    def is_random_order(self) -> bool: return self._player.is_random_order
+    def next_music(self) -> MusicElement | None:
+        return self._player.next_music
+
+    @property
+    def is_loop(self) -> bool:
+        return self._player.is_loop
+
+    @property
+    def is_random_order(self) -> bool:
+        return self._player.is_random_order
 
     @property
     def current_channel(self) -> VoiceChannel | None:
@@ -67,7 +80,8 @@ class PlayerController:
             return None
 
     @property
-    def is_active(self) -> bool: return self._player.status == PlayerStatus.ACTIVE
+    def is_active(self) -> bool:
+        return self._player.status == PlayerStatus.ACTIVE
 
     def _validate_status(self) -> StateValidationFailedReason | None:
         if self.status == PlayerStatus.DONE:

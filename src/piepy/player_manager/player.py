@@ -203,13 +203,14 @@ class Player:
     def add_last(self, music: MusicElement):
         self._order_manager = self._order_manager.add_last(music).update_next_element()
 
-    def rm(self, music: MusicElement):
+    async def rm(self, music: MusicElement):
         if music not in self._order_manager.elements:
             raise ValueError('Cannot remove. Given music element does not exists')
         if music == self._order_manager.current_element:
             raise MusicInPlayingError('Cannot remove. Given music is currently playing')
 
         self._order_manager = self._order_manager.rm(music)
+        await music.cleanup()
 
     def jump_to(self, music: MusicElement | None):
         if music is not None:
