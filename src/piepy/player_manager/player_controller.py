@@ -124,8 +124,7 @@ class PlayerController:
             await asyncio.wait_for(future, timeout=None)
             skipped = True
 
-        self._player.rm(music)
-        await music.cleanup()
+        await self._player.rm(music)
 
         if skipped:
             return MusicRemovingResult.SKIPPED_AND_REMOVED
