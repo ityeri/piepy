@@ -26,9 +26,8 @@ class MusicElement(ABC):
     async def create_source(self) -> AudioSource:
         ...
 
-    @abstractmethod
     async def cleanup(self):
-        ...
+        pass
 
 
 class UrlStreamMusicElement(MusicElement):  # 지금 무료체험하세요
@@ -46,9 +45,6 @@ class UrlStreamMusicElement(MusicElement):  # 지금 무료체험하세요
             stderr=open(os.devnull, 'wb')
         )
 
-    @override
-    async def cleanup(self): pass
-
 
 class LocalFileMusicElement(MusicElement):
     def __init__(
@@ -58,7 +54,8 @@ class LocalFileMusicElement(MusicElement):
             url: str,
             title_image_url: str,
             length: float,
-            file_path: str, *,
+            file_path: str,
+            *,
             auto_file_delete: bool = False
     ):
         super().__init__(id, title, url, title_image_url, length)
@@ -76,4 +73,5 @@ class LocalFileMusicElement(MusicElement):
     @override
     async def cleanup(self):
         if self.auto_file_delete:
+            self.auto_file_delete = False
             os.remove(self.file_path)

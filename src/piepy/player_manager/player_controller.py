@@ -111,6 +111,7 @@ class PlayerController:
             skipped = True
 
         self._player.rm(music)
+        await music.cleanup()
 
         if skipped:
             return MusicRemovingResult.SKIPPED_AND_REMOVED
