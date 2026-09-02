@@ -2,7 +2,10 @@ import logging
 from enum import Enum, auto
 
 from pytubefix import YouTube
-from pytubefix.exceptions import *
+from pytubefix.exceptions import VideoPrivate, MembersOnly, LoginRequired, AgeRestrictedError, AgeCheckRequiredError, \
+    VideoRemovedByUploader, VideoRemovedByYouTubeForViolatingTOS, AccountTerminated, VideoRegionBlocked, \
+    VideoBlockedByCopyright, LiveStreamError, LiveStreamEnded, LiveStreamOffline, RecordingUnavailable, \
+    VideoUnavailable, BotDetection
 
 _logger = logging.getLogger(__name__)
 
@@ -34,25 +37,40 @@ def fetch_youtube(url: str, max_attempts: int = 10) -> YouTube | YouTubeFetching
         # pytubefix's message comparing logic is made based on english locale UI messages
         # that means it doesn't works in korea locale.
         # This is pytubefix's problem it self. This might more good to implement on the yspy lib
-        except VideoPrivate: return YouTubeFetchingResult.VIDEO_PRIVATE
-        except MembersOnly: return YouTubeFetchingResult.VIDEO_PRIVATE
-        except LoginRequired: return YouTubeFetchingResult.VIDEO_PRIVATE
-        except AgeRestrictedError: return YouTubeFetchingResult.VIDEO_PRIVATE
-        except AgeCheckRequiredError: return YouTubeFetchingResult.VIDEO_PRIVATE
+        except VideoPrivate:
+            return YouTubeFetchingResult.VIDEO_PRIVATE
+        except MembersOnly:
+            return YouTubeFetchingResult.VIDEO_PRIVATE
+        except LoginRequired:
+            return YouTubeFetchingResult.VIDEO_PRIVATE
+        except AgeRestrictedError:
+            return YouTubeFetchingResult.VIDEO_PRIVATE
+        except AgeCheckRequiredError:
+            return YouTubeFetchingResult.VIDEO_PRIVATE
 
-        except VideoRemovedByUploader: return YouTubeFetchingResult.VIDEO_REMOVED
-        except VideoRemovedByYouTubeForViolatingTOS: return YouTubeFetchingResult.VIDEO_REMOVED
-        except AccountTerminated: return YouTubeFetchingResult.VIDEO_REMOVED
+        except VideoRemovedByUploader:
+            return YouTubeFetchingResult.VIDEO_REMOVED
+        except VideoRemovedByYouTubeForViolatingTOS:
+            return YouTubeFetchingResult.VIDEO_REMOVED
+        except AccountTerminated:
+            return YouTubeFetchingResult.VIDEO_REMOVED
 
-        except VideoRegionBlocked: return YouTubeFetchingResult.VIDEO_BLOCKED
-        except VideoBlockedByCopyright: return YouTubeFetchingResult.VIDEO_BLOCKED
+        except VideoRegionBlocked:
+            return YouTubeFetchingResult.VIDEO_BLOCKED
+        except VideoBlockedByCopyright:
+            return YouTubeFetchingResult.VIDEO_BLOCKED
 
-        except LiveStreamError: return YouTubeFetchingResult.UNAVAILABLE_LIVE
-        except LiveStreamEnded: return YouTubeFetchingResult.UNAVAILABLE_LIVE
-        except LiveStreamOffline: return YouTubeFetchingResult.UNAVAILABLE_LIVE
-        except RecordingUnavailable: return YouTubeFetchingResult.UNAVAILABLE_LIVE
+        except LiveStreamError:
+            return YouTubeFetchingResult.UNAVAILABLE_LIVE
+        except LiveStreamEnded:
+            return YouTubeFetchingResult.UNAVAILABLE_LIVE
+        except LiveStreamOffline:
+            return YouTubeFetchingResult.UNAVAILABLE_LIVE
+        except RecordingUnavailable:
+            return YouTubeFetchingResult.UNAVAILABLE_LIVE
 
-        except VideoUnavailable: return YouTubeFetchingResult.UNKNOWN
+        except VideoUnavailable:
+            return YouTubeFetchingResult.UNKNOWN
 
     _logger.warning(f'BotDetection: exhausted {max_attempts} attempts for url={url}')
     return YouTubeFetchingResult.BOT_DETECTION
