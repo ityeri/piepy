@@ -1,3 +1,4 @@
+import logging
 from enum import Enum, auto
 
 from discord import Embed
@@ -7,14 +8,16 @@ from pytubefix.exceptions import RegexMatchError
 from yarl import URL
 from yspy.__future__ import VideosSearch
 
-from piepy.player_manager import PlayerManager, UrlStreamMusicElement, MusicAddingResult, MusicElement, \
+from piepy.player_manager import PlayerManager, MusicAddingResult, MusicElement, \
     PlayerController, PlayerStatus, PlayerStopReason, StateValidationFailedReason
 from piepy.utils import theme
+from piepy.youtube import YouTubeFetchingResult, YouTubeMusicElementProvider, fetch_youtube
 from .next_music_select_view import NextMusicSelectView
 from .order_mode_select_view import OrderModeSelectView
 from .playlist_view import PlaylistView
 from .removing_music_select_view import RemovingMusicSelectView
-from .youtube_fetcher import YouTubeFetchingResult, fetch_youtube
+
+_logger = logging.getLogger(__name__)
 
 
 async def get_urls_by_query(query: str, limit: int) -> list[str]:
@@ -23,10 +26,11 @@ async def get_urls_by_query(query: str, limit: int) -> list[str]:
 
     return [single_result['link'] for single_result in result['result']]
 
+
 def query_music_naturally(musics: list[MusicElement], title_or_index: str) -> MusicElement | None:
     try:
         index: int = int(title_or_index) - 1
-        if 0 <= index: # 맞다 파이썬 음수 인덱스도 있었지
+        if 0 <= index:  # 맞다 파이썬 음수 인덱스도 있었지
             try:
                 return musics[index]
             except IndexError:
@@ -41,11 +45,13 @@ def query_music_naturally(musics: list[MusicElement], title_or_index: str) -> Mu
 
     return None
 
+
 def ensure_scheme(url_str: str, scheme: str = 'https') -> URL:
     url = URL(url_str)
     if not url.scheme:
         url = URL(f"{scheme}://{url_str}")
     return url
+
 
 class UserVoiceAvailability(Enum):
     UNAVAILABLE = auto()
@@ -54,9 +60,10 @@ class UserVoiceAvailability(Enum):
 
 
 class MusicCommandCog(commands.Cog):
-    def __init__(self, bot: commands.Bot, player_manager: PlayerManager):
+    def __init__(self, bot: commands.Bot, player_manager: PlayerManager, music_provider: YouTubeMusicElementProvider):
         self.bot: commands.Bot = bot
         self.player_manager: PlayerManager = player_manager
+        self.music_provider: YouTubeMusicElementProvider = music_provider
 
     async def on_player_stop(self, player_controller: PlayerController, reason: PlayerStopReason):
         # whether controller.current_channel is null is depends on PlayerStopReason
@@ -65,7 +72,7 @@ class MusicCommandCog(commands.Cog):
         if reason == PlayerStopReason.END_OF_PLAY:
             await player_controller.current_channel.send(
                 embed=Embed(
-                    title='BYE_BYE',
+                    title='END_OF_PLAY',
                     description='모든 영상을 재생했습니다! ㅃ',
                     color=theme.OK_COLOR
                 )
@@ -132,7 +139,6 @@ class MusicCommandCog(commands.Cog):
         )
         return UserVoiceAvailability.UNAVAILABLE
 
-
     class PlayFlags(commands.FlagConverter):
         url_or_query: str = \
             commands.Flag(name='주소나_검색어', description='유튜브 영상의 주소나 검색어를 입력하세요')
@@ -175,22 +181,24 @@ class MusicCommandCog(commands.Cog):
             url = results[0]
 
         # step3. get the YouTube object and validate
-        yt = await self.fetch_youtube(ctx, url, query)
+        yt = await self.fetch_youtube_with_context(ctx, url, query)
         if yt is None:
             return
 
-        # step4. get the final stream url and create a MusicElement
-        stream = max(yt.streams.filter(only_audio=True), key=lambda s: int(s.abr[:-4]) if s.abr else 0)
-        audio_stream_url = stream.url
-
-        music = UrlStreamMusicElement(
-            f'yt_video_{yt.video_id}',
-            title=yt.title,
-            url=str(ensure_scheme(url)),
-            title_image_url=yt.thumbnail_url,
-            length=yt.length,
-            stream_url=audio_stream_url
-        )
+        # step4. get the final stream and create a MusicElement
+        try:
+            music = await self.music_provider.create_music_from_yt(yt, str(ensure_scheme(url)))
+        except Exception:
+            # pytubefix/yt-dlp can raise various errors while fetching the actual stream
+            _logger.error(f'Failed to create a MusicElement from YouTube: url={url}', exc_info=True)
+            await ctx.reply(
+                embed=Embed(
+                    title='DOWNLOAD_FAILED',
+                    description='영상을 받아오는 중 문제가 발생했습니다! 잠시 후 다시 시도해 주세요',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+            return
 
         # step5. if necessary, ready or move a player
         if availability == UserVoiceAvailability.CREATABLE:
@@ -222,7 +230,7 @@ class MusicCommandCog(commands.Cog):
             else:
                 footer_text = f'검색어: {query}' if query is not None else ''
                 if availability == UserVoiceAvailability.MOVABLE:
-                    footer_text += '\n  **·**  ' .join(
+                    footer_text += '\n  **·**  '.join(
                         [footer_text, '원래 봇이 있던곳이 비어 있어 자동으로 이동했습니다!']
                     )
                 if not footer_text:
@@ -247,7 +255,7 @@ class MusicCommandCog(commands.Cog):
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
 
-    async def fetch_youtube(self, ctx: commands.Context, url: str, query: str | None) -> YouTube | None:
+    async def fetch_youtube_with_context(self, ctx: commands.Context, url: str, query: str | None) -> YouTube | None:
         result = fetch_youtube(url)
 
         # TODO most of this if statements are never be reached. read the youtube_fetcher.py
@@ -306,7 +314,6 @@ class MusicCommandCog(commands.Cog):
         else:
             return None
 
-
     @commands.hybrid_command(name='나가', description='재생을 멈추고 통화방을 나갑니다')
     async def stop(self, ctx: commands.Context):
         result = await self.check_user_voice_state(ctx)
@@ -335,7 +342,7 @@ class MusicCommandCog(commands.Cog):
         else:
             await ctx.reply(
                 embed=Embed(
-                    title='BYE_BYE',
+                    title='END_OF_PLAY',
                     description='재생을 멈추고 통화방을 나갑니다',
                     color=theme.OK_COLOR
                 )

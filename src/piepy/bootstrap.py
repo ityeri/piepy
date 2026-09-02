@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 
 import reger
 from discord.ext import commands
@@ -36,6 +35,11 @@ class Bootstrapper:
         player_gc = self.root_container.player_gc()
         asyncio.create_task(player_gc.run())
         _logger.info('PlayerGc has started')
+
+        _logger.info('Initializing YoutubeMusicElementProvider...')
+        music_provider = self.root_container.youtube_music_provider()
+        music_provider.init()
+        _logger.info('YoutubeMusicElementProvider has initialized')
 
         _logger.info('Starting bot...')
         bot_task = asyncio.create_task(self.bot.start(token=self.config.bot_token))

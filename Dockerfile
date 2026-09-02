@@ -5,6 +5,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     git \
+    nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir uv

@@ -7,6 +7,7 @@ from piepy import config
 from piepy.command_front.music_command_cog import MusicCommandCog
 from piepy.player_gc import PlayerGc
 from piepy.player_manager import PlayerManager
+from piepy.youtube import YouTubeMusicElementProvider
 
 
 class RootContainer(containers.DeclarativeContainer):
@@ -22,5 +23,13 @@ class RootContainer(containers.DeclarativeContainer):
     player_gc: Singleton[PlayerGc] = \
         Singleton(PlayerGc, player_manager=player_manager, interval=60.0)
 
+    youtube_music_provider: Singleton[YouTubeMusicElementProvider] = \
+        Singleton(YouTubeMusicElementProvider, download_dir=config.provided.download_dir)
+
     music_command_cog: Singleton[MusicCommandCog] = \
-        Singleton(MusicCommandCog, bot=bot, player_manager=player_manager)
+        Singleton(
+            MusicCommandCog,
+            bot=bot,
+            player_manager=player_manager,
+            music_provider=youtube_music_provider
+        )

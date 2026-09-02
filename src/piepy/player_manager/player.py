@@ -24,11 +24,13 @@ class PlayerStatus(Enum):
     STOPPING = auto()
     DONE = auto()
 
+
 class PlayerStopReason(Enum):
     EXTERNAL_REQUEST = auto()
     END_OF_PLAY = auto()
     DISCONNECTED = auto()
     SOURCE_CREATION_FAILED = auto()
+
 
 @dataclass(frozen=True)
 class PlayerStopEvent:
@@ -37,12 +39,14 @@ class PlayerStopEvent:
 
     type Listener = Callable[[PlayerStopEvent], Awaitable]
 
+
 class MusicInPlayingError(Exception): ...
 
 
 class Player:
     """
     """
+
     def __init__(
             self,
             bot: commands.Bot,
@@ -91,12 +95,14 @@ class Player:
             return self._order_manager.elements
         else:
             return None
+
     @property
     def current_music(self) -> MusicElement | None:
         if self._order_manager is not None:
             return self._order_manager.current_element
         else:
             return None
+
     @property
     def next_music(self) -> MusicElement | None:
         if self._order_manager is not None:
@@ -105,10 +111,12 @@ class Player:
             return None
 
     @property
-    def is_loop(self) -> bool: return self._order_manager.is_loop
-    @property
-    def is_random_order(self) -> bool: return self._order_manager.is_random_order
+    def is_loop(self) -> bool:
+        return self._order_manager.is_loop
 
+    @property
+    def is_random_order(self) -> bool:
+        return self._order_manager.is_random_order
 
     async def on_voice_state_update(self, member: Member, before: VoiceState, after: VoiceState):
         if (
@@ -118,7 +126,6 @@ class Player:
                 and self.status == PlayerStatus.ACTIVE
         ):
             await self._stop(PlayerStopReason.DISCONNECTED)
-
 
     def start(self):
         if self.status != PlayerStatus.READY:
@@ -168,7 +175,6 @@ class Player:
         self._play_wrap(audio_source)
         self._notify_step_waiters()
 
-
     async def stop(self):
         if self.status != PlayerStatus.ACTIVE:
             raise RuntimeError('Cannot stop. Player status is not ACTIVE')
@@ -189,19 +195,22 @@ class Player:
         if self.voice_client.is_connected():
             await self.voice_client.disconnect()
 
-        self.status = PlayerStatus.DONE
+        for music in self._order_manager.elements:
+            await music.cleanup()
 
+        self.status = PlayerStatus.DONE
 
     def add_last(self, music: MusicElement):
         self._order_manager = self._order_manager.add_last(music).update_next_element()
 
-    def rm(self, music: MusicElement):
+    async def rm(self, music: MusicElement):
         if music not in self._order_manager.elements:
             raise ValueError('Cannot remove. Given music element does not exists')
         if music == self._order_manager.current_element:
             raise MusicInPlayingError('Cannot remove. Given music is currently playing')
 
         self._order_manager = self._order_manager.rm(music)
+        await music.cleanup()
 
     def jump_to(self, music: MusicElement | None):
         if music is not None:
@@ -213,8 +222,8 @@ class Player:
         self.voice_client.stop()
 
     def change_order_mode(self, is_loop: bool, is_random_order: bool):
-        self._order_manager = self._order_manager\
-            .change_order_mode(is_loop, is_random_order)\
+        self._order_manager = self._order_manager \
+            .change_order_mode(is_loop, is_random_order) \
             .update_next_element()
 
     async def move_to(self, channel: VoiceChannel):

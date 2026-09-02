@@ -1,7 +1,7 @@
-from .music_element import MusicElement, UrlStreamMusicElement
+from .music_element import MusicElement, UrlStreamMusicElement, LocalFileMusicElement
 from .player import PlayerStatus, PlayerStopReason
-from .player_manager import PlayerManager
 from .player_controller import PlayerController, StateValidationFailedReason, MusicAddingResult, MusicRemovingResult
+from .player_manager import PlayerManager
 
 __all__ = [
     'PlayerManager',
@@ -14,5 +14,6 @@ __all__ = [
     'PlayerStopReason',
 
     'MusicElement',
-    'UrlStreamMusicElement'
+    'UrlStreamMusicElement',
+    'LocalFileMusicElement'
 ]

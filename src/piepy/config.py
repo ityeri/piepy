@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 class Config:
     bot_token: str
     log_file_path: str | None
+    download_dir: str
 
 
 def get_config_from_env() -> Config:
@@ -15,5 +16,6 @@ def get_config_from_env() -> Config:
 
     return Config(
         os.getenv('BOT_TOKEN'),
-        os.getenv('LOG_FILE')
+        os.getenv('LOG_FILE'),
+        os.getenv('DOWNLOAD_DIR', './downloads')
     )
