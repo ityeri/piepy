@@ -20,7 +20,7 @@ def fetch_youtube(url: str, max_attempts: int = 10) -> YouTube | YouTubeFetching
 
     while tries < max_attempts:
         try:
-            yt = YouTube(url)
+            yt = YouTube(url, client='WEB')
             yt.check_availability()
             _logger.debug(f'YouTube fetch succeeded: url={url}')
             return yt
