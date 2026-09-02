@@ -1,3 +1,4 @@
+import logging
 from enum import Enum, auto
 
 from discord import Embed
@@ -10,12 +11,13 @@ from yspy.__future__ import VideosSearch
 from piepy.player_manager import PlayerManager, MusicAddingResult, MusicElement, \
     PlayerController, PlayerStatus, PlayerStopReason, StateValidationFailedReason
 from piepy.utils import theme
-from piepy.youtube import YouTubeMusicElementProvider
-from piepy.youtube.youtube_fetcher import YouTubeFetchingResult, fetch_youtube
+from piepy.youtube import YouTubeFetchingResult, YouTubeMusicElementProvider, fetch_youtube
 from .next_music_select_view import NextMusicSelectView
 from .order_mode_select_view import OrderModeSelectView
 from .playlist_view import PlaylistView
 from .removing_music_select_view import RemovingMusicSelectView
+
+_logger = logging.getLogger(__name__)
 
 
 async def get_urls_by_query(query: str, limit: int) -> list[str]:
@@ -147,7 +149,6 @@ class MusicCommandCog(commands.Cog):
         if availability == UserVoiceAvailability.UNAVAILABLE:
             return
 
-        # message = await ctx.reply('영상을 다운받고 있습니다.. 잠시 시간이 걸릴수 있어요')
         await ctx.defer()
 
         # step1. is the url_or_query url?
@@ -185,7 +186,19 @@ class MusicCommandCog(commands.Cog):
             return
 
         # step4. get the final stream and create a MusicElement
-        music = await self.music_provider.create_music_from_yt(yt, str(ensure_scheme(url)))
+        try:
+            music = await self.music_provider.create_music_from_yt(yt, str(ensure_scheme(url)))
+        except Exception:
+            # pytubefix/yt-dlp can raise various errors while fetching the actual stream
+            _logger.error(f'Failed to create a MusicElement from YouTube: url={url}', exc_info=True)
+            await ctx.reply(
+                embed=Embed(
+                    title='DOWNLOAD_FAILED',
+                    description='영상을 받아오는 중 문제가 발생했습니다! 잠시 후 다시 시도해 주세요',
+                    color=theme.ERROR_COLOR
+                ).set_footer(text=f'검색어: {query}' if query is not None else None)
+            )
+            return
 
         # step5. if necessary, ready or move a player
         if availability == UserVoiceAvailability.CREATABLE:
