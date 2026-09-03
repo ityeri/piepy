@@ -172,6 +172,7 @@ class Player:
             await self._stop(PlayerStopReason.SOURCE_CREATION_FAILED)
             return
 
+        await asyncio.sleep(2.0)
         self._play_wrap(audio_source)
         self._notify_step_waiters()
 
