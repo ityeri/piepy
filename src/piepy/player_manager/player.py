@@ -124,6 +124,7 @@ class Player:
                 and before.channel is not None
                 and after.channel is None
                 and self.status == PlayerStatus.ACTIVE
+                and before.channel.guild.id == self.guild_id
         ):
             await self._stop(PlayerStopReason.DISCONNECTED)
 
