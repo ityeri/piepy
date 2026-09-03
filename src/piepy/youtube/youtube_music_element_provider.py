@@ -9,9 +9,7 @@ from pytubefix import Stream, YouTube
 from piepy.player_manager import LocalFileMusicElement, MusicElement, UrlStreamMusicElement
 
 _YTDLP_ARGS: list[str] = [
-    '--quiet',
-    '--no-warnings',
-    '--no-progress',
+    '--no-playlist',
     '--format', 'bestaudio/best',
     '--js-runtimes', 'node',
     '--remote-components', 'ejs:github',
