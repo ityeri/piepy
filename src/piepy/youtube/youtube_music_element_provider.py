@@ -1,34 +1,33 @@
-import asyncio
 import os
-import sys
 import uuid
 from collections.abc import Iterable
 from pathlib import Path
 
-from pytubefix import Stream, YouTube
+from ydpy import Format, StreamingProtocol
 
-from piepy.player_manager import LocalFileMusicElement, MusicElement, UrlStreamMusicElement
+from piepy.player_manager import LocalFileMusicElement, MusicElement
+from piepy.youtube.youtube_fetcher import YtVideo
 
-_MAX_AUDIO_KBPS = 50
-
-_YTDLP_ARGS: list[str] = [
-    '--no-playlist',
-    '--format', f'bestaudio[abr<={_MAX_AUDIO_KBPS}]/worstaudio/best',
-    '--js-runtimes', 'node',
-    '--remote-components', 'ejs:github',
-]
+_MAX_AUDIO_BPS = 50_000
 
 
-def _pick_audio_stream(streams: Iterable[Stream]) -> Stream:
+def _pick_audio_format(formats: Iterable[Format]) -> Format:
     # limit the audio bitrate to 50kbps: pick the best stream under the cap
-    capped = [s for s in streams if s.abr and int(s.abr[:-4]) <= _MAX_AUDIO_KBPS]
+    audio = [
+        f for f in formats
+        if f.is_audio and f.protocol is StreamingProtocol.HTTPS and not f.has_drm
+    ]
+    if not audio:
+        raise RuntimeError('no playable audio stream found')
+
+    capped = [f for f in audio if f.bitrate and f.bitrate <= _MAX_AUDIO_BPS]
     if capped:
-        return max(capped, key=lambda s: int(s.abr[:-4]))
+        return max(capped, key=lambda f: f.bitrate or 0)
 
     # no stream under the cap: pick the lowest bitrate one so playback never breaks
-    if known_abr := [s for s in streams if s.abr]:
-        return min(known_abr, key=lambda s: int(s.abr[:-4]))
-    return next(iter(streams))
+    if known_bitrate := [f for f in audio if f.bitrate]:
+        return min(known_bitrate, key=lambda f: f.bitrate or 0)
+    return max(audio, key=lambda f: f.bitrate or 0)
 
 
 class YouTubeMusicElementProvider:  # 지금 무료체험 하세요
@@ -42,53 +41,26 @@ class YouTubeMusicElementProvider:  # 지금 무료체험 하세요
         for leftover in Path(self.download_dir).glob('*.bin*'):
             leftover.unlink()
 
-    async def create_music_from_yt(self, yt: YouTube, video_url: str) -> MusicElement:
-        stream = _pick_audio_stream(yt.streams.filter(only_audio=True))
+    async def create_music_from_yt(self, yt: YtVideo, video_url: str) -> MusicElement:
+        fmt = _pick_audio_format(yt.formats)
 
-        if stream.is_sabr:
-            return LocalFileMusicElement(
-                f'yt_video_{yt.video_id}',
-                title=yt.title,
-                url=video_url,
-                title_image_url=yt.thumbnail_url,
-                length=yt.length,
-                file_path=await self._download_audio(video_url),
-                auto_file_delete=True
-            )
-        else:
-            return UrlStreamMusicElement(
-                f'yt_video_{yt.video_id}',
-                title=yt.title,
-                url=video_url,
-                title_image_url=yt.thumbnail_url,
-                length=yt.length,
-                stream_url=stream.url
-            )
+        # ydpy streams are plain (non-SABR) urls; keep the file-based element so
+        # playback never breaks on stream url expiry mid-queue
+        return LocalFileMusicElement(
+            f'yt_video_{yt.video_id}',
+            title=yt.title,
+            url=video_url,
+            title_image_url=yt.thumbnail_url,
+            length=yt.length,
+            file_path=await self._download_audio(fmt),
+            auto_file_delete=True
+        )
 
-    async def _download_audio(self, video_url: str) -> str:
+    async def _download_audio(self, fmt: Format) -> str:
         filename = f'{uuid.uuid4()}.bin'
         file_path = str(Path(self.download_dir).joinpath(filename))
 
-        # yt-dlp runs as a separate process so that its CPU work and memory do not
-        # contend with the bot's event loop and voice playback for the GIL
-        proc = await asyncio.create_subprocess_exec(
-            sys.executable, '-m', 'yt_dlp',
-            *_YTDLP_ARGS,
-            '--output', file_path,
-            video_url,
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.PIPE
-        )
-        try:
-            _, stderr = await proc.communicate()
-        except asyncio.CancelledError:
-            proc.terminate()
-            await proc.wait()
-            raise
-
-        if proc.returncode != 0:
-            raise RuntimeError(
-                f'yt-dlp download failed with exit code {proc.returncode}: '
-                f'{stderr.decode(errors="replace")[-300:]}'
-            )
+        # ydpy downloads are pure httpx IO that cooperates with the event loop,
+        # so the yt-dlp subprocess isolation is no longer needed
+        await fmt.adownload(file_path)
         return file_path

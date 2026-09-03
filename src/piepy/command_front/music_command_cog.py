@@ -3,15 +3,15 @@ from enum import Enum, auto
 
 from discord import Embed, Message
 from discord.ext import commands
-from pytubefix import YouTube, extract
-from pytubefix.exceptions import RegexMatchError
+from ydpy import Video
+from ydpy.exceptions import InvalidVideoIdentifierException
 from yarl import URL
 from yspy.__future__ import VideosSearch
 
 from piepy.player_manager import PlayerManager, MusicAddingResult, MusicElement, \
     PlayerController, PlayerStatus, PlayerStopReason, StateValidationFailedReason
 from piepy.utils import theme
-from piepy.youtube import YouTubeFetchingResult, YouTubeMusicElementProvider, fetch_youtube
+from piepy.youtube import YouTubeFetchingResult, YouTubeMusicElementProvider, YtVideo, fetch_youtube
 from .next_music_select_view import NextMusicSelectView
 from .order_mode_select_view import OrderModeSelectView
 from .playlist_view import PlaylistView
@@ -151,11 +151,11 @@ class MusicCommandCog(commands.Cog):
 
         message = await ctx.reply('영상 정보를 가져오고 있습니다...')
 
-        # step1. is the url_or_query url?
+        # step1. is the url_or_query url? (ydpy parses ids/urls without network)
         try:
-            extract.video_id(flags.url_or_query)
+            Video(flags.url_or_query)
             is_youtube_url = True
-        except RegexMatchError:
+        except InvalidVideoIdentifierException:
             is_youtube_url = False
 
         # step2. get query, url from url_or_query
@@ -262,7 +262,7 @@ class MusicCommandCog(commands.Cog):
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
 
-    async def fetch_youtube_with_context(self, message: Message, url: str, query: str | None) -> YouTube | None:
+    async def fetch_youtube_with_context(self, message: Message, url: str, query: str | None) -> YtVideo | None:
         result = fetch_youtube(url)
 
         # TODO most of this if statements are never be reached. read the youtube_fetcher.py
@@ -316,7 +316,7 @@ class MusicCommandCog(commands.Cog):
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
 
-        if isinstance(result, YouTube):
+        if isinstance(result, YtVideo):
             return result
         else:
             return None
