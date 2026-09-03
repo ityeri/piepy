@@ -1,21 +1,21 @@
 import asyncio
 import os
+import sys
 import uuid
 from pathlib import Path
 
 from pytubefix import Stream, YouTube
-from yt_dlp import YoutubeDL
 
 from piepy.player_manager import LocalFileMusicElement, MusicElement, UrlStreamMusicElement
 
-_YTDLP_CONFIG: dict[str, object] = {
-    'quiet': True,
-    'no_warnings': True,
-    'noprogress': True,
-    'format': 'bestaudio/best',
-    'js_runtimes': {'node': {}},
-    'remote_components': ['ejs:github'],
-}
+_YTDLP_ARGS: list[str] = [
+    '--quiet',
+    '--no-warnings',
+    '--no-progress',
+    '--format', 'bestaudio/best',
+    '--js-runtimes', 'node',
+    '--remote-components', 'ejs:github',
+]
 
 
 class YouTubeMusicElementProvider:  # 지금 무료체험 하세요
@@ -26,7 +26,7 @@ class YouTubeMusicElementProvider:  # 지금 무료체험 하세요
         os.makedirs(self.download_dir, exist_ok=True)
 
         # remove leftover files from crashed previous sessions
-        for leftover in Path(self.download_dir).glob('*.bin'):
+        for leftover in Path(self.download_dir).glob('*.bin*'):
             leftover.unlink()
 
     async def create_music_from_yt(self, yt: YouTube, video_url: str) -> MusicElement:
@@ -56,9 +56,26 @@ class YouTubeMusicElementProvider:  # 지금 무료체험 하세요
         filename = f'{uuid.uuid4()}.bin'
         file_path = str(Path(self.download_dir).joinpath(filename))
 
-        def run():
-            with YoutubeDL({**_YTDLP_CONFIG, 'outtmpl': file_path}) as ydl:
-                ydl.extract_info(video_url, download=True)
+        # yt-dlp runs as a separate process so that its CPU work and memory do not
+        # contend with the bot's event loop and voice playback for the GIL
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, '-m', 'yt_dlp',
+            *_YTDLP_ARGS,
+            '--output', file_path,
+            video_url,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.PIPE
+        )
+        try:
+            _, stderr = await proc.communicate()
+        except asyncio.CancelledError:
+            proc.terminate()
+            await proc.wait()
+            raise
 
-        await asyncio.to_thread(run)
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f'yt-dlp download failed with exit code {proc.returncode}: '
+                f'{stderr.decode(errors="replace")[-300:]}'
+            )
         return file_path
