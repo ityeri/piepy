@@ -13,7 +13,7 @@ _MAX_AUDIO_KBPS = 50
 
 _YTDLP_ARGS: list[str] = [
     '--no-playlist',
-    '--format', 'bestaudio[abr<=50]/worstaudio/best',
+    '--format', f'bestaudio[abr<={_MAX_AUDIO_KBPS}]/worstaudio/best',
     '--js-runtimes', 'node',
     '--remote-components', 'ejs:github',
 ]
