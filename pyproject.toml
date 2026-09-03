@@ -17,6 +17,7 @@ dependencies = [
     "discord.py>=2.6.4,<3.0.0",
     "yspy @ git+https://github.com/ityeri/yspy.git",
     "ydpy @ git+https://github.com/ityeri/ydpy.git@develop",
+    "pytubefix>=10.3.6,<11.0.0",
     "dotenv>=0.9.9,<1.0.0",
     "davey>=0.1.6",
     "dependency-injector>=4.49.1",
