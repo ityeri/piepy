@@ -1,7 +1,7 @@
 import logging
 from enum import Enum, auto
 
-from discord import Embed
+from discord import Embed, Message
 from discord.ext import commands
 from pytubefix import YouTube, extract
 from pytubefix.exceptions import RegexMatchError
@@ -149,7 +149,7 @@ class MusicCommandCog(commands.Cog):
         if availability == UserVoiceAvailability.UNAVAILABLE:
             return
 
-        await ctx.defer()
+        message = await ctx.reply('영상 정보를 가져오고 있습니다...')
 
         # step1. is the url_or_query url?
         try:
@@ -163,11 +163,13 @@ class MusicCommandCog(commands.Cog):
             query = None
             url = flags.url_or_query
         else:
+            message = await message.edit(content='영상을 검색중입니다...')
             query = flags.url_or_query
             results = await get_urls_by_query(query, limit=1)
 
             if not results:
-                await ctx.reply(
+                await message.edit(
+                    content='no',
                     embed=Embed(
                         title='RESULT_NOT_FOUND',
                         description=f'주어진 검색어 "{query}" 에 대한 유튜브 검색 결과가 없습니다!',
@@ -185,13 +187,16 @@ class MusicCommandCog(commands.Cog):
         if yt is None:
             return
 
+        await message.edit(content='영상을 받아오고 있습니다... 잠시 시간이 걸릴수 있습니다')
+
         # step4. get the final stream and create a MusicElement
         try:
             music = await self.music_provider.create_music_from_yt(yt, str(ensure_scheme(url)))
         except Exception:
             # pytubefix/yt-dlp can raise various errors while fetching the actual stream
             _logger.error(f'Failed to create a MusicElement from YouTube: url={url}', exc_info=True)
-            await ctx.reply(
+            await message.edit(
+                content='no',
                 embed=Embed(
                     title='DOWNLOAD_FAILED',
                     description='영상을 받아오는 중 문제가 발생했습니다! 잠시 후 다시 시도해 주세요',
@@ -199,6 +204,8 @@ class MusicCommandCog(commands.Cog):
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
             return
+
+        await message.edit(content='영상을 모두 받았습니다!')
 
         # step5. if necessary, ready or move a player
         if availability == UserVoiceAvailability.CREATABLE:
@@ -216,7 +223,7 @@ class MusicCommandCog(commands.Cog):
 
         if music_add_result == MusicAddingResult.ADDED:
             if player_controller.status != PlayerStatus.ACTIVE:
-                await ctx.reply(
+                await message.edit(
                     embed=Embed(
                         title='CONNECTED_AND_PLAYED',
                         description=f'**{music.title}** 영상을 연결 및 재생합니다!',
@@ -236,7 +243,7 @@ class MusicCommandCog(commands.Cog):
                 if not footer_text:
                     footer_text = None
 
-                await ctx.reply(
+                await message.edit(
                     embed=Embed(
                         title='ADDED_TO_PLAYLIST',
                         description=f'**{music.title}** 영상을 재생목록에 추가했습니다',
@@ -247,7 +254,7 @@ class MusicCommandCog(commands.Cog):
                 )
 
         elif music_add_result == MusicAddingResult.DUPLICATED:
-            await ctx.reply(
+            await message.edit(
                 embed=Embed(
                     title='DUPLICATED',
                     description=f'**{music.title}** 영상은 중복됩니다!',
@@ -255,12 +262,12 @@ class MusicCommandCog(commands.Cog):
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
 
-    async def fetch_youtube_with_context(self, ctx: commands.Context, url: str, query: str | None) -> YouTube | None:
+    async def fetch_youtube_with_context(self, message: Message, url: str, query: str | None) -> YouTube | None:
         result = fetch_youtube(url)
 
         # TODO most of this if statements are never be reached. read the youtube_fetcher.py
         if result == YouTubeFetchingResult.VIDEO_PRIVATE:
-            await ctx.reply(
+            await message.edit(
                 embed=Embed(
                     title='VIDEO_PRIVATE',
                     description='비공개 영상이거나, 멤버십 전용 영상이거나, 연령 제한이 존재하는 영상입니다!',
@@ -268,7 +275,7 @@ class MusicCommandCog(commands.Cog):
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
         elif result == YouTubeFetchingResult.VIDEO_REMOVED:
-            await ctx.reply(
+            await message.edit(
                 embed=Embed(
                     title='VIDEO_REMOVED',
                     description='삭제된 영상입니다!',
@@ -276,7 +283,7 @@ class MusicCommandCog(commands.Cog):
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
         elif result == YouTubeFetchingResult.VIDEO_BLOCKED:
-            await ctx.reply(
+            await message.edit(
                 embed=Embed(
                     title='VIDEO_BLOCKED',
                     description='저작권 또는 지역 제한으로 재생할 수 없는 영상입니다!',
@@ -284,7 +291,7 @@ class MusicCommandCog(commands.Cog):
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
         elif result == YouTubeFetchingResult.UNAVAILABLE_LIVE:
-            await ctx.reply(
+            await message.edit(
                 embed=Embed(
                     title='UNAVAILABLE_LIVE',
                     description='라이브 방송은 다시보기가 아니라면 재생할 수 없습니다!',
@@ -292,7 +299,7 @@ class MusicCommandCog(commands.Cog):
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
         elif result == YouTubeFetchingResult.BOT_DETECTION:
-            await ctx.reply(
+            await message.edit(
                 embed=Embed(
                     title='BOT_DETECTION',
                     description='영상을 가져오던중 YouTube에 의해 봇으로 감지되었습니다. 잠시 후 다시 시도해 주세요!',
@@ -300,7 +307,7 @@ class MusicCommandCog(commands.Cog):
                 ).set_footer(text=f'검색어: {query}' if query is not None else None)
             )
         elif result == YouTubeFetchingResult.UNKNOWN:
-            await ctx.reply(
+            await message.edit(
                 embed=Embed(
                     title='VIDEO_UNAVAILABLE',
                     description='알 수 없는 이유로 영상에 접근할 수 없습니다!'
