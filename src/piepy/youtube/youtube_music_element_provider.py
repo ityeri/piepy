@@ -2,18 +2,33 @@ import asyncio
 import os
 import sys
 import uuid
+from collections.abc import Iterable
 from pathlib import Path
 
 from pytubefix import Stream, YouTube
 
 from piepy.player_manager import LocalFileMusicElement, MusicElement, UrlStreamMusicElement
 
+_MAX_AUDIO_KBPS = 50
+
 _YTDLP_ARGS: list[str] = [
     '--no-playlist',
-    '--format', 'bestaudio/best',
+    '--format', 'bestaudio[abr<=50]/worstaudio/best',
     '--js-runtimes', 'node',
     '--remote-components', 'ejs:github',
 ]
+
+
+def _pick_audio_stream(streams: Iterable[Stream]) -> Stream:
+    # limit the audio bitrate to 50kbps: pick the best stream under the cap
+    capped = [s for s in streams if s.abr and int(s.abr[:-4]) <= _MAX_AUDIO_KBPS]
+    if capped:
+        return max(capped, key=lambda s: int(s.abr[:-4]))
+
+    # no stream under the cap: pick the lowest bitrate one so playback never breaks
+    if known_abr := [s for s in streams if s.abr]:
+        return min(known_abr, key=lambda s: int(s.abr[:-4]))
+    return next(iter(streams))
 
 
 class YouTubeMusicElementProvider:  # 지금 무료체험 하세요
@@ -28,7 +43,7 @@ class YouTubeMusicElementProvider:  # 지금 무료체험 하세요
             leftover.unlink()
 
     async def create_music_from_yt(self, yt: YouTube, video_url: str) -> MusicElement:
-        stream: Stream = max(yt.streams.filter(only_audio=True), key=lambda s: int(s.abr[:-4]) if s.abr else 0)
+        stream = _pick_audio_stream(yt.streams.filter(only_audio=True))
 
         if stream.is_sabr:
             return LocalFileMusicElement(
